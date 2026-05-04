@@ -87,7 +87,25 @@ export class UserController {
 
         if (textBody.trim().startsWith('--')) {
           // Definitely Multipart (starts with boundary)
-          const formData = await req.formData();
+          let formData;
+          
+          if (contentType.includes('multipart/form-data')) {
+            // Header is correct, use standard parser
+            formData = await req.formData();
+          } else {
+            // Header is INCORRECT (likely application/json but body is multipart).
+            // We manually extract the boundary and re-parse to avoid TypeError.
+            const firstLine = textBody.split('\n')[0].trim();
+            const boundary = firstLine.startsWith('--') ? firstLine.substring(2).trim() : '';
+            
+            const tempReq = new Request('http://localhost', {
+              method: 'POST',
+              headers: { 'Content-Type': `multipart/form-data; boundary=${boundary}` },
+              body: textBody
+            });
+            formData = await tempReq.formData();
+          }
+
           updateData = {
             fullName: formData.get('fullName'),
             email: formData.get('email'),
