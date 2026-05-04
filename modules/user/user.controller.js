@@ -166,8 +166,12 @@ export class UserController {
           updateData.profileImage = uploadResult.url;
           console.log(`[DEBUG] S3 Upload Success: ${updateData.profileImage}`);
         } catch (uploadError) {
-          console.error('[DEBUG] S3 Upload Error:', uploadError);
-          return Response.json({ success: false, message: 'Failed to upload profile image' }, { status: 500 });
+          console.error('[DEBUG] S3 Upload Error Detail:', uploadError);
+          return Response.json({ 
+            success: false, 
+            message: `Failed to upload profile image: ${uploadError.message}`,
+            debug: uploadError.stack
+          }, { status: 500 });
         }
       } else if (typeof profileImage === 'string' && profileImage.startsWith('http')) {
         console.log(`[DEBUG] Using existing image URL`);

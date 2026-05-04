@@ -54,7 +54,10 @@ async function putObjectRaw(bodyBuffer, contentType, key) {
   console.log(`  content-type  : ${contentType}`);
   console.log(`  body size     : ${bodyBuffer.length} bytes`);
   console.log(`  payload hash  : ${payloadHash}`);
-  console.log(`  x-amz-content-sha256 included: YES (= payload hash above)`);
+  
+  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
+  console.log(`  credential scope: ${credentialScope}`);
+  console.log(`  access key id   : ${accessKeyId.slice(0, 5)}...`);
   console.log('[S3 SigV4 Debug] ─────────────────────────────────────');
 
   // Canonical headers (alphabetically sorted by header name)
@@ -76,7 +79,7 @@ async function putObjectRaw(bodyBuffer, contentType, key) {
     payloadHash,
   ].join('\n');
 
-  const credentialScope = `${dateStamp}/${region}/s3/aws4_request`;
+  // credentialScope already declared above for logging
   const stringToSign = [
     'AWS4-HMAC-SHA256',
     amzDate,
@@ -145,9 +148,17 @@ export class S3Service {
 
     const extension   = (file.name || 'upload').split('.').pop().toLowerCase() || 'bin';
     const key         = `${folder}/${crypto.randomUUID()}.${extension}`;
+    const mimeMap = {
+      'jpg': 'image/jpeg',
+      'jpeg': 'image/jpeg',
+      'png': 'image/png',
+      'gif': 'image/gif',
+      'webp': 'image/webp',
+      'pdf': 'application/pdf'
+    };
     const contentType = file.type && file.type !== 'application/octet-stream'
       ? file.type
-      : 'image/jpeg'; // Contabo sometimes rejects raw octet-stream; default to jpeg for profile pics
+      : (mimeMap[extension] || 'image/jpeg');
 
     console.log(`[S3Service.upload] Starting upload:`);
     console.log(`  file.name    : ${file.name}`);
