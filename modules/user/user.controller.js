@@ -66,13 +66,14 @@ export class UserController {
   /**
    * PUT /api/user/update-profile
    * Updates basic user info (Name, Email, Image)
+   * Handles multipart form data with file uploads securely
    * @param {Request} req 
    */
   static async updateProfile(req) {
     try {
       await dbConnect();
 
-      // 1. Logging for backend debugging (requested by user)
+      // 1. Logging for backend debugging
       const contentType = req.headers.get('content-type') || '';
       console.log(`[DEBUG] Update Profile Request Headers:`);
       console.log(` - content-type: ${contentType}`);
@@ -89,7 +90,6 @@ export class UserController {
 
       // 3. Robust Parser Selection
       // If header is correct, we call formData() directly to avoid stream consumption issues.
-      // If header is NOT multipart (e.g. application/json), we peek at the buffer to catch hidden multiparts.
       const isMultipartHeader = contentType.includes('multipart/form-data');
       console.log(`[DEBUG] Content-Type Header: ${contentType}`);
 
@@ -100,9 +100,22 @@ export class UserController {
           fullName = formData.get('fullName');
           email = formData.get('email');
           profileImage = formData.get('profileImage');
+          
+          console.log(`[DEBUG] Extracted from formData:`, {
+            fullName,
+            email,
+            hasProfileImage: !!profileImage,
+            profileImageName: profileImage?.name,
+            profileImageSize: profileImage?.size,
+            profileImageType: profileImage?.type
+          });
         } catch (err) {
-          console.error('[DEBUG] Native formData() failed:', err);
-          return Response.json({ success: false, message: 'Invalid multipart data' }, { status: 400 });
+          console.error('[DEBUG] Native formData() failed:', err.message);
+          return Response.json({ 
+            success: false, 
+            message: 'Invalid multipart data format',
+            error: err.message
+          }, { status: 400 });
         }
       } else {
         try {
@@ -110,14 +123,17 @@ export class UserController {
           const arrayBuffer = await req.arrayBuffer();
           const buffer = Buffer.from(arrayBuffer);
 
-          if (buffer.length > 0 && buffer[0] === 45) { // ASCII 45 is '-'
-            console.log(`[DEBUG] Detected hidden multipart in JSON-tagged request`);
+          if (buffer.length > 0 && buffer[0] === 45) { // ASCII 45 is '-' (multipart boundary)
+            console.log(`[DEBUG] Detected multipart boundary in buffer, re-parsing as multipart`);
             
             // Extract boundary from the first line
             let actualBoundary = '';
             let boundaryEnd = 0;
             for (let i = 0; i < 200 && i < buffer.length; i++) {
-              if (buffer[i] === 13 && buffer[i+1] === 10) { boundaryEnd = i; break; }
+              if (buffer[i] === 13 && buffer[i+1] === 10) { // \r\n
+                boundaryEnd = i;
+                break;
+              }
             }
             if (boundaryEnd > 2) {
               actualBoundary = new TextDecoder().decode(buffer.subarray(2, boundaryEnd));
@@ -126,6 +142,7 @@ export class UserController {
             const newHeaders = new Headers(req.headers);
             if (actualBoundary) {
               newHeaders.set('content-type', `multipart/form-data; boundary=${actualBoundary}`);
+              console.log(`[DEBUG] Set corrected content-type with boundary: ${actualBoundary}`);
             }
 
             const parsedReq = new Request(req.url, {
@@ -139,48 +156,89 @@ export class UserController {
             fullName = formData.get('fullName');
             email = formData.get('email');
             profileImage = formData.get('profileImage');
+            console.log(`[DEBUG] Extracted from corrected formData`);
           } else {
-            console.log(`[DEBUG] Parsing as standard JSON`);
+            console.log(`[DEBUG] Parsing as JSON`);
             const body = JSON.parse(new TextDecoder().decode(buffer));
             fullName = body.fullName;
             email = body.email;
-            profileImage = body.profileImage; // Might be a string URL or null
+            profileImage = body.profileImage;
           }
         } catch (err) {
-          console.error('[DEBUG] Fallback parsing failed:', err);
+          console.error('[DEBUG] Buffer parsing failed:', err.message, err.stack);
           return Response.json({ 
             success: false, 
-            message: 'Invalid request body format. Ensure Content-Type is correct.' 
+            message: 'Invalid request body format. Ensure Content-Type header is correct.',
+            error: err.message
           }, { status: 400 });
         }
       }
 
-      // 4. Common Processing Logic
-      updateData = { fullName, email, profileImage };
-      console.log(`[DEBUG] Extracted Data:`, { fullName, email, profileImagePresent: !!profileImage });
-
-      // Handle image upload if it's a file object
-      if (profileImage && typeof profileImage !== 'string' && profileImage.name) {
-        try {
-          const uploadResult = await S3Service.upload(profileImage, 'profiles');
-          updateData.profileImage = uploadResult.url;
-          console.log(`[DEBUG] S3 Upload Success: ${updateData.profileImage}`);
-        } catch (uploadError) {
-          console.error('[DEBUG] S3 Upload Error Detail:', uploadError);
-          return Response.json({ 
-            success: false, 
-            message: `Failed to upload profile image: ${uploadError.message}`,
-            debug: uploadError.stack
-          }, { status: 500 });
-        }
-      } else if (typeof profileImage === 'string' && profileImage.startsWith('http')) {
-        console.log(`[DEBUG] Using existing image URL`);
-      } else {
-        delete updateData.profileImage;
+      // 4. Input Validation
+      if (!fullName || !fullName.trim()) {
+        return Response.json({
+          success: false,
+          message: 'Full name is required'
+        }, { status: 400 });
       }
 
+      if (!email || !email.includes('@')) {
+        return Response.json({
+          success: false,
+          message: 'Valid email is required'
+        }, { status: 400 });
+      }
 
-      // 3. Update (Mobile number is NOT passed here, ensuring it cannot be changed)
+      updateData = { fullName: fullName.trim(), email: email.trim() };
+      console.log(`[DEBUG] Extracted Data:`, { 
+        fullName: updateData.fullName, 
+        email: updateData.email,
+        profileImagePresent: !!profileImage,
+        profileImageType: typeof profileImage
+      });
+
+      // 5. Handle image upload if it's a file object
+      if (profileImage) {
+        if (typeof profileImage === 'string') {
+          // If it's a URL, keep it as is
+          if (profileImage.startsWith('http')) {
+            console.log(`[DEBUG] Using existing image URL`);
+            updateData.profileImage = profileImage;
+          } else {
+            console.log(`[DEBUG] Ignoring non-URL string for profileImage`);
+          }
+        } else if (profileImage && profileImage.name && profileImage.size > 0) {
+          // It's a file object, upload it
+          try {
+            console.log(`[DEBUG] Uploading profile image to S3...`);
+            const uploadResult = await S3Service.upload(profileImage, 'profiles');
+            updateData.profileImage = uploadResult.url;
+            console.log(`[DEBUG] S3 Upload Success: ${updateData.profileImage}`);
+          } catch (uploadError) {
+            console.error('[DEBUG] S3 Upload Error:', {
+              message: uploadError.message,
+              stack: uploadError.stack,
+              fileName: profileImage.name,
+              fileSize: profileImage.size
+            });
+            
+            return Response.json({ 
+              success: false, 
+              message: `Failed to upload profile image: ${uploadError.message}`,
+              error: uploadError.message
+            }, { status: 500 });
+          }
+        } else {
+          console.log(`[DEBUG] profileImage present but not valid:`, {
+            type: typeof profileImage,
+            hasName: profileImage?.name,
+            hasSize: profileImage?.size,
+            size: profileImage?.size
+          });
+        }
+      }
+
+      // 6. Update user profile in database
       const updatedUser = await UserService.updateProfile(authUser.id, updateData);
 
       return Response.json({
@@ -195,10 +253,15 @@ export class UserController {
       }, { status: 200 });
 
     } catch (error) {
-      console.error('[UserController.updateProfile Error]', error);
+      console.error('[UserController.updateProfile Error]', {
+        message: error.message,
+        stack: error.stack
+      });
+      
       return Response.json({ 
         success: false, 
-        message: error.message || 'Internal server error' 
+        message: 'Failed to update profile: ' + (error.message || 'Internal server error'),
+        error: error.message
       }, { status: 500 });
     }
   }
