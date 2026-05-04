@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { ArrowLeft, Upload, Loader2, CheckCircle2, AlertCircle } from 'lucide-react';
+import { ArrowLeft, Upload, Loader2, CheckCircle, AlertCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 export default function VendorUploadTestPage() {
@@ -37,6 +37,7 @@ export default function VendorUploadTestPage() {
       const res = await fetch('/api/modules/vendor/upload', {
         method: 'POST',
         body: formData,
+        // Removed explicit headers for multipart
       });
 
       const data = await res.json();
@@ -129,7 +130,7 @@ export default function VendorUploadTestPage() {
           {result ? (
             <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4">
               <div className="mb-2 flex items-center gap-2 text-emerald-700">
-                <CheckCircle2 className="h-4 w-4" />
+                <CheckCircle className="h-4 w-4" />
                 <span className="text-sm font-semibold">Upload successful</span>
               </div>
               <p className="break-all text-sm text-slate-700"><strong>URL:</strong> {result.url}</p>
