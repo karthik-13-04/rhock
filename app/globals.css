@@ -3,24 +3,61 @@
 :root {
   --background: #ffffff;
   --foreground: #171717;
+  
+  /* Admin Design System Tokens */
+  --admin-primary: #ff1a3c;
+  --admin-primary-soft: rgba(255, 26, 60, 0.1);
+  --admin-primary-glow: rgba(255, 26, 60, 0.43); /* #ff1a3c6e equivalent */
+  --admin-secondary: #FFE8EE; /* Soft pastel pink */
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+  
+  /* Hardened Admin Design System Tokens */
+  --color-admin-primary: #ff1a3c;
+  --color-admin-primary-soft: rgba(255, 26, 60, 0.08); /* Slightly softer */
+  --color-admin-primary-glow: rgba(255, 26, 60, 0.43);
+  --color-admin-secondary: #FFE8EE;
+  
+  --radius-2xl: 1rem;
+  --radius-3xl: 1.5rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  * {
+    @apply border-zinc-200;
+  }
+  body {
+    background: var(--background);
+    color: var(--foreground);
+    @apply antialiased selection:bg-admin-primary/20 selection:text-admin-primary;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .glass-sidebar {
+    @apply bg-white/80 backdrop-blur-2xl border-r border-zinc-200/50 shadow-[4px_0_24px_rgba(0,0,0,0.02)];
+  }
+  
+  .glass-card {
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_rgba(255,26,60,0.05)];
+  }
+
+  .glass-topbar {
+    @apply bg-white/60 backdrop-blur-lg border-b border-white/20 shadow-sm;
+  }
+
+  .text-glow-primary {
+    text-shadow: 0 0 12px rgba(255, 26, 60, 0.3);
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
 }

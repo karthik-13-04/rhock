@@ -1,0 +1,149 @@
+# RhockDeal API Testing Suite
+# Compatible with VS Code REST Client
+
+@baseUrl = http://localhost:3000/api/modules
+@json = Content-Type: application/json
+@userId = USER_ID_HERE
+@adminId = ADMIN_ID_HERE
+
+###
+# 1. AUTH: Send OTP
+# @name sendOtp
+POST {{baseUrl}}/auth/send-otp
+{{json}}
+
+{
+    "email": "test@example.com",
+    "phone": "9876543210"
+}
+
+###
+# 2. AUTH: Verify OTP
+# @name verifyOtp
+POST {{baseUrl}}/auth/verify-otp
+{{json}}
+
+{
+    "email": "test@example.com",
+    "otp": "123456"
+}
+
+###
+# 3. VENDOR: Register Step 1 (Basic Info)
+# @name vendorRegisterStep1
+POST {{baseUrl}}/vendor/register
+{{json}}
+
+{
+    "userId": "{{userId}}",
+    "firstName": "John",
+    "lastName": "Doe",
+    "email": "john@example.com",
+    "phone": "9876543210"
+}
+
+###
+# 4. VENDOR: Register Step 2 (Business Details)
+# @name vendorRegisterStep2
+PATCH {{baseUrl}}/vendor/register/{{vendorId}}
+{{json}}
+
+{
+    "businessName": "John's Shop",
+    "businessType": "proprietorship",
+    "gstNumber": "22AAAAA0000A1Z5",
+    "panNumber": "AAAAA0000A",
+    "businessAddress": {
+        "street": "123 Main St",
+        "city": "Mumbai",
+        "state": "Maharashtra",
+        "pincode": "400001"
+    }
+}
+
+###
+# 5. VENDOR: Register Step 3 (Docs & Bank - FIXED)
+# @name vendorRegisterStep3
+PATCH {{baseUrl}}/vendor/register/{{vendorId}}
+{{json}}
+
+{
+    "bankAccount": {
+        "accountHolderName": "John Doe",
+        "accountNumber": "1234567890",
+        "ifscCode": "HDFC0001234",
+        "bankName": "HDFC Bank"
+    },
+    "termsAccepted": true
+}
+
+###
+# 6. VENDOR: Submit Registration
+# @name vendorSubmit
+PATCH {{baseUrl}}/vendor/register/{{vendorId}}/submit
+{{json}}
+
+{}
+
+###
+# 7. ADS: Create Ad
+# @name createAd
+POST {{baseUrl}}/ads
+{{json}}
+
+{
+    "userId": "{{userId}}",
+    "title": "Summer Sale Item",
+    "description": "This is a detailed description of the summer sale item with at least 20 characters.",
+    "category": "Electronics",
+    "price": 1500,
+    "location": {
+        "city": "Mumbai",
+        "state": "Maharashtra"
+    }
+}
+
+###
+# 8. ADS: List Ads (Public)
+GET {{baseUrl}}/ads?category=Electronics
+
+###
+# 9. ADS: List Ads (User's own)
+GET {{baseUrl}}/ads
+x-user-id: {{userId}}
+
+###
+# 10. ADS: Admin Moderate (Approve)
+PATCH {{baseUrl}}/ads/{{adId}}/status
+{{json}}
+
+{
+    "action": "approve",
+    "adminId": "{{adminId}}",
+    "notes": "Looks good!"
+}
+
+###
+# 11. SUBSCRIPTION: List Plans
+GET {{baseUrl}}/subscription/plans
+
+###
+# 12. SUBSCRIPTION: Purchase Trial
+POST {{baseUrl}}/subscription/purchase
+{{json}}
+
+{
+    "userId": "{{userId}}",
+    "planId": "trial-plan-slug",
+    "paymentMethod": "trial"
+}
+
+###
+# 13. COINS: Get Wallet Balance (NEW)
+GET {{baseUrl}}/coins/wallet
+x-user-id: {{userId}}
+
+###
+# 14. CRON: Trigger Expiry (NEW/FIXED)
+POST {{baseUrl}}/cron
+Authorization: Bearer YOUR_CRON_SECRET

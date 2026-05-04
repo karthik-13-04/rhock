@@ -1,0 +1,451 @@
+### Vendor Registration Step 1 API Testing Guide
+
+This guide provides instructions for testing the **POST /api/vendor/register/step-1** endpoint.
+
+#### 1. Prerequisites
+- **Auth Token**: You must have a valid JWT token for a user with the `role: "vendor"`.
+- **Base URL**: `http://localhost:3000` (or your local environment URL).
+
+---
+
+#### 2. Test Cases
+
+##### Case A: Successful Step 1 (New Vendor)
+- **URL**: `/api/vendor/register/step-1`
+- **Method**: `POST`
+- **Headers**:
+  - `Authorization: Bearer <YOUR_VENDOR_TOKEN>`
+  - `Content-Type: application/json`
+- **Body**:
+  ```json
+  {
+    "fullName": "Karthik Dannina",
+    "email": "karthik@email.com"
+  }
+  ```
+- **Expected Response**:
+  ```json
+  {
+    "success": true,
+    "message": "Step 1 data saved",
+    "vendorId": "64abcdef...",
+    "status": "draft_step_1"
+  }
+  ```
+
+##### Case B: Update Existing Draft
+- **Description**: Send the same request again with a modified name.
+- **Body**:
+  ```json
+  {
+    "fullName": "Karthik Updated",
+    "email": "karthik@email.com"
+  }
+  ```
+- **Expected Behavior**: The existing record should be updated without creating a duplicate.
+
+##### Case C: Validation Failure (Missing Name)
+- **Body**:
+  ```json
+  {
+    "email": "karthik@email.com"
+  }
+  ```
+- **Expected Response**: `400 Bad Request` with `{ "success": false, "message": "Validation failed: Full Name is required" }`.
+
+##### Case D: Unauthorized (No Token)
+- **Headers**: (Empty)
+- **Expected Response**: `401 Unauthorized` with `{ "success": false, "error": { "type": "AUTHENTICATION_ERROR", "message": "Access token required" } }`.
+
+##### Case E: Forbidden (Wrong Role)
+- **Description**: Use a JWT with `role: "user"` or `role: "admin"`.
+- **Expected Response**: `403 Forbidden` with `{ "success": false, "error": { "type": "AUTHORIZATION_ERROR", "message": "Access denied..." } }`.
+
+---
+
+#### 4. Step 2: Business Details + Media Upload
+- **URL**: `/api/vendor/register/step-2`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body Type**: `form-data`
+
+**Fields (Text):**
+- `categoryId`: `69e5b8c30635c7f3ddc4c000` (Use an ID from the seed script output)
+- `storeName`: `Karthik's Tech Store`
+- `storeAbout`: `Premium electronics and gadgets`
+- `state`: `Andhra Pradesh`
+- `district`: `Visakhapatnam`
+- `mandal`: `Gajuwaka`
+
+**Files (Binary):**
+- `storeThumbnail`: `[Select Image File - 1:1 suggested]`
+- `storeBanner`: `[Select Image File - 16:9 suggested]`
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Step 2 data saved",
+  "vendorId": "...",
+  "registrationStep": 2
+}
+```
+
+---
+
+#### 5. Step 3: Final Submission
+- **URL**: `/api/vendor/register/step-3`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body Type**: `JSON`
+
+**Body:**
+```json
+{
+  "latitude": 17.4483,
+  "longitude": 78.3915,
+  "fullAddress": "Hitech City Main Road, Cyber Towers Area, Hyderabad, 500081",
+  "agentCode": "AGT12345"
+}
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Registration completed. Awaiting admin approval",
+  "vendorId": "...",
+  "status": "pending_approval"
+}
+```
+
+---
+
+#### 6. Ad Creation (Vendor Listing)
+- **URL**: `/api/ads/create`
+- **Method**: `POST`
+- **Auth**: `Bearer <ACTIVE_VENDOR_TOKEN>`
+- **Body Type**: `form-data`
+
+**Fields (Text):**
+- `title`: `Premium iPhone 15 Pro`
+- `description`: `Brand new condition, with all accessories.`
+- `targetUrl`: `https://youtube.com/watch?v=...`
+
+**Files (Binary):**
+- `adImage`: `[Select Ad Creative - JPG/PNG]`
+
+**Expected Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Ad created successfully. Awaiting approval",
+  "adId": "...",
+  "remainingCredits": 49
+}
+```
+
+**Common Errors:**
+- `403 Forbidden`: "Vendor profile must be active to create ads"
+- `400 Bad Request`: "Insufficient credits" or "Missing required fields"
+
+---
+
+#### 7. Get Vendor Ads (List + Filter + Pagination)
+- **URL**: `/api/ads/vendor`
+- **Method**: `GET`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+
+**Query Parameters (Optional):**
+- `status`: `approved` | `pending` | `rejected`
+- `page`: `1`
+- `limit`: `10`
+
+**Example Request:**
+`{{baseUrl}}/api/ads/vendor?status=approved&page=1&limit=5`
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "total": 25,
+  "page": 1,
+  "limit": 5,
+  "ads": [
+    {
+      "_id": "...",
+      "title": "...",
+      "description": "...",
+      "imageUrl": "...",
+      "status": "approved",
+      "views": 100,
+      "createdAt": "..."
+    }
+  ]
+}
+```
+
+---
+
+#### 8. Edit Ad (Vendor Update with Re-Approval)
+- **URL**: `/api/ads/edit/<AD_ID>`
+- **Method**: `PUT`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body Type**: `form-data`
+
+**Fields (Optional - Send what you want to change):**
+- `title`: `Updated title`
+- `description`: `Updated description`
+- `targetUrl`: `https://...`
+- `adImage`: `[New Image File - replaces old one]`
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Ad updated successfully. Awaiting re-approval",
+  "adId": "...",
+  "status": "pending"
+}
+```
+
+---
+
+#### 10. Admin: Approve / Reject Ad
+- **URL**: `/api/admin/ads/review/<AD_ID>`
+- **Method**: `PUT`
+- **Auth**: `Bearer <ADMIN_TOKEN>`
+- **Body Type**: `JSON`
+
+**Body (Approve):**
+```json
+{
+  "action": "approve"
+}
+```
+
+**Body (Reject):**
+```json
+{
+  "action": "reject",
+  "reason": "Violates community guidelines: prohibited content."
+}
+```
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "message": "Ad approved successfully",
+  "status": "approved"
+}
+```
+
+---
+
+#### 11. Get Subscription Plans (Public)
+- **URL**: `/api/subscription/plans`
+- **Method**: `GET`
+- **Auth**: `None` (Public)
+
+**Expected Response:**
+```json
+{
+  "success": true,
+  "plans": [
+    {
+      "_id": "...",
+      "name": "STANDARD",
+      "price": 4699,
+      "validityDays": 30,
+      "credits": 20,
+      "description": "...",
+      "isActive": true
+    }
+  ]
+}
+```
+
+---
+
+#### 12. Create Payment Order (Razorpay)
+- **URL**: `/api/payment/create-order`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body**: `JSON`
+
+**Request Body:**
+```json
+{
+  "planId": "<VALID_PLAN_ID>"
+}
+```
+
+**Expected Response (Success):**
+```json
+{
+  "success": true,
+  "order": {
+    "id": "order_NXp0...",
+    "amount": 469900,
+    "currency": "INR"
+  },
+  "plan": {
+    "name": "STANDARD",
+    "credits": 20
+  }
+}
+```
+
+---
+
+#### 13. Verify Payment & Activate Subscription
+- **URL**: `/api/payment/verify`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body**: `JSON`
+
+**Request Body:**
+```json
+{
+  "razorpay_order_id": "order_NXp0...", 
+  "razorpay_payment_id": "pay_NXp1...",
+  "razorpay_signature": "signature_xxx..."
+}
+```
+
+**Expected Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Payment verified and subscription activated",
+  "subscription": {
+    "planName": "STANDARD",
+    "creditsTotal": 20,
+    "creditsUsed": 0,
+    "expiryDate": "2026-05-20T..."
+  }
+}
+```
+
+---
+
+#### 14. Get Current Subscription (Vendor)
+- **URL**: `/api/subscription/current`
+- **Method**: `GET`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+
+**Expected Response (Active):**
+```json
+{
+  "success": true,
+  "subscription": {
+    "planName": "STANDARD",
+    "creditsTotal": 40,
+    "creditsUsed": 20,
+    "creditsRemaining": 20,
+    "startDate": "2026-04-01T...",
+    "expiryDate": "2026-05-01T...",
+    "isActive": true
+  }
+}
+```
+
+**Expected Response (No Plan):**
+```json
+{
+  "success": true,
+  "subscription": null,
+  "message": "No active subscription"
+}
+```
+
+---
+
+#### 15. Initiate Coin Redemption (Search + Validate)
+- **URL**: `/api/coins/initiate`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body**: `JSON`
+
+**Request Body:**
+```json
+{
+  "referralCode": "89612863",
+  "coins": 3000
+}
+```
+
+**Expected Response (Success):**
+```json
+{
+  "success": true,
+  "message": "User validated. Proceed to OTP",
+  "user": {
+    "userId": "...",
+    "name": "Subramanyam",
+    "availableCoins": 5000
+  },
+  "transactionId": "txn_xxx..."
+}
+```
+
+---
+
+#### 16. Send OTP for Coin Redemption (Step 2)
+- **URL**: `/api/coins/send-otp`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body**: `JSON`
+
+**Request Body:**
+```json
+{
+  "transactionId": "<TRANSACTION_ID_FROM_STEP_1>"
+}
+```
+
+**Expected Response (Success):**
+```json
+{
+  "success": true,
+  "message": "OTP sent successfully"
+}
+```
+
+---
+
+#### 17. Verify OTP & Complete Coin Redemption (Step 3)
+- **URL**: `/api/coins/verify`
+- **Method**: `POST`
+- **Auth**: `Bearer <VENDOR_TOKEN>`
+- **Body**: `JSON`
+
+**Request Body:**
+```json
+{
+  "transactionId": "<TRANSACTION_ID_FROM_STEP_1>",
+  "otp": "1234"
+}
+```
+
+**Expected Response (Success):**
+```json
+{
+  "success": true,
+  "message": "Transaction completed successfully",
+  "transaction": {
+    "transactionId": "...",
+    "coinsTransferred": 3000,
+    "status": "completed"
+  }
+}
+```
+
+---
+
+#### 18. Postman Export (Summary)
+1. Set Method to **POST**.
+2. URL: `{{baseUrl}}/api/coins/verify`.
+3. **Auth**: Bearer Token.
+4. **Body**: raw -> JSON.
