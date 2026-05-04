@@ -89,28 +89,44 @@ export class UserController {
             profileImage: formData.get('profileImage')
           };
 
-          // Only handle profileImage if it's a file upload
           if (updateData.profileImage && typeof updateData.profileImage !== 'string') {
             const uploadResult = await S3Service.upload(updateData.profileImage, 'profiles');
             updateData.profileImage = uploadResult.url;
           } else {
             delete updateData.profileImage;
           }
-        } else if (contentType.includes('application/json') || !contentType) {
-          // Default to JSON if content-type is application/json or missing
-          const body = await req.json();
-          updateData = {
-            fullName: body?.fullName,
-            email: body?.email
-          };
         } else {
-          return Response.json({ 
-            success: false, 
-            message: `Unsupported Content-Type: ${contentType}. Please use multipart/form-data or application/json.` 
-          }, { status: 400 });
+          // Try JSON first, fallback to FormData if it fails (handles cases with incorrect Content-Type headers)
+          try {
+            const body = await req.json();
+            updateData = {
+              fullName: body?.fullName,
+              email: body?.email
+            };
+          } catch (jsonError) {
+            // Fallback: If JSON parsing fails, try parsing as FormData (cloning the request to re-read the body)
+            try {
+              const formData = await req.clone().formData();
+              updateData = {
+                fullName: formData.get('fullName'),
+                email: formData.get('email'),
+                profileImage: formData.get('profileImage')
+              };
+              
+              if (updateData.profileImage && typeof updateData.profileImage !== 'string') {
+                const uploadResult = await S3Service.upload(updateData.profileImage, 'profiles');
+                updateData.profileImage = uploadResult.url;
+              } else {
+                delete updateData.profileImage;
+              }
+            } catch (formError) {
+              // If both fail, throw the original JSON error
+              throw jsonError;
+            }
+          }
         }
       } catch (e) {
-        console.error('[UserController.updateProfile Parsing Error]', e);
+        console.error(`[UserController.updateProfile Parsing Error] CT: ${contentType}`, e);
         
         let message = 'Invalid request body or format';
         if (e instanceof SyntaxError && e.message.includes('JSON')) {
