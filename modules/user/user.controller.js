@@ -84,22 +84,25 @@ export class UserController {
         if (contentType.includes('multipart/form-data')) {
           const formData = await req.formData();
           updateData = {
-            name: formData.get('name'),
+            fullName: formData.get('fullName'),
             email: formData.get('email'),
             profileImage: formData.get('profileImage')
           };
 
-          // If profileImage is a file, upload it
+          // Only handle profileImage if it's a file upload
           if (updateData.profileImage && typeof updateData.profileImage !== 'string') {
             const uploadResult = await S3Service.upload(updateData.profileImage, 'profiles');
             updateData.profileImage = uploadResult.url;
+          } else {
+            // If it's a string or missing, we don't update the image via this field
+            delete updateData.profileImage;
           }
         } else {
           const body = await req.json();
           updateData = {
-            name: body.name,
-            email: body.email,
-            profileImage: body.profileImage
+            fullName: body.fullName,
+            email: body.email
+            // profileImage is NOT supported via JSON as per requirements (only upload)
           };
         }
       } catch (e) {
@@ -107,7 +110,7 @@ export class UserController {
         return Response.json({ success: false, message: 'Invalid request body or format' }, { status: 400 });
       }
 
-      // 3. Update
+      // 3. Update (Mobile number is NOT passed here, ensuring it cannot be changed)
       const updatedUser = await UserService.updateProfile(authUser.id, updateData);
 
       return Response.json({

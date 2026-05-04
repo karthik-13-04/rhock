@@ -26,11 +26,11 @@ export class UserService {
    * @param {string} userId 
    * @param {Object} updateData { name, email, profileImage }
    */
-  static async updateProfile(userId, { name, email, profileImage }) {
+  static async updateProfile(userId, { fullName, email, profileImage }) {
     const updateFields = { profileCompleted: true };
 
-    if (name) {
-      const nameParts = name.trim().split(' ');
+    if (fullName) {
+      const nameParts = fullName.trim().split(' ');
       updateFields.firstName = nameParts[0];
       updateFields.lastName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
     }
