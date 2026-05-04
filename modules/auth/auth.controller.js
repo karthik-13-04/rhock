@@ -1,5 +1,7 @@
 import { AuthService } from '@/modules/auth/auth.service.js';
 import { authLimiter, otpLimiter } from '@/middleware/rateLimiter.js';
+import { dbConnect } from '@/config/database.js';
+import { S3Service } from '@/services/s3.service.js';
 
 export class AuthController {
   /**
@@ -85,11 +87,42 @@ export class AuthController {
    */
   static async register(req) {
     try {
-      let body;
-      try {
-        body = await req.json();
-      } catch (e) {
-        return new Response(JSON.stringify({ success: false, message: 'Invalid body' }), { status: 400 });
+      await dbConnect();
+      
+      const contentType = req.headers.get('content-type') || '';
+      let body = {};
+
+      // 1. Parse Body (JSON or Multipart)
+      if (contentType.includes('multipart/form-data')) {
+        const formData = await req.formData();
+        body = {
+          fullName: formData.get('fullName'),
+          email: formData.get('email'),
+          mobileNumber: formData.get('mobileNumber'),
+          state: formData.get('state'),
+          district: formData.get('district'),
+          mandal: formData.get('mandal'),
+          referralCode: formData.get('referralCode'),
+          profileImage: formData.get('profileImage')
+        };
+
+        // If profileImage is a file, upload it to S3
+        if (body.profileImage && typeof body.profileImage !== 'string') {
+          try {
+            const uploadResult = await S3Service.upload(body.profileImage, 'profiles');
+            body.profileImage = uploadResult.url;
+          } catch (uploadError) {
+            console.error('[Registration Upload Error]', uploadError);
+            // Non-critical: Continue registration without image if upload fails
+            body.profileImage = '';
+          }
+        }
+      } else {
+        try {
+          body = await req.json();
+        } catch (e) {
+          return new Response(JSON.stringify({ success: false, message: 'Invalid JSON body' }), { status: 400 });
+        }
       }
 
       const { fullName, email, mobileNumber, state, district, mandal } = body;

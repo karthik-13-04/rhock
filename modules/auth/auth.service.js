@@ -77,7 +77,7 @@ export class AuthService {
    * @param {Object} userData 
    */
   static async registerUser(userData) {
-    const { fullName, email, mobileNumber, state, district, mandal, referralCode } = userData;
+    const { fullName, email, mobileNumber, state, district, mandal, referralCode, profileImage } = userData;
 
     await dbConnect();
 
@@ -101,6 +101,7 @@ export class AuthService {
       state,
       district,
       mandal,
+      profileImage: profileImage || '', // Optional profile picture
       role: 'user',
       status: 'pending', // Will become active after OTP verification
       profileCompleted: true // Since they provided all details during registration
@@ -212,10 +213,16 @@ export class AuthService {
       user: {
         _id: user._id.toString(),
         name: `${user.firstName || ''} ${user.lastName || ''}`.trim(),
+        email: user.email || '',
         mobileNumber: user.phone,
+        state: user.state || '',
+        district: user.district || '',
+        mandal: user.mandal || '',
+        profileImage: user.profileImage || '',
         role: user.role,
         isVerified: user.phoneVerified,
-        profileCompleted: true // Forced to true to bypass profile setup screen in the app
+        coinBalance: user.coinBalance || 0,
+        profileCompleted: true 
       }
     };
   }
