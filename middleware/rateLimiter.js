@@ -49,7 +49,7 @@ export function createRateLimiter({ windowMs, max, message, type = 'general' }) 
  */
 export const authLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max: 5,
+  max: 20, // Increased from 5 to 20
   message: 'Too many authentication attempts. Please try again in an hour.',
   type: 'auth'
 });
@@ -60,7 +60,7 @@ export const authLimiter = createRateLimiter({
  */
 export const otpLimiter = createRateLimiter({
   windowMs: 60 * 60 * 1000,
-  max: 10,
+  max: 30, // Increased from 10 to 30
   message: 'Too many OTP requests. Please try again after an hour.',
   type: 'otp'
 });
