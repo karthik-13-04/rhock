@@ -87,10 +87,14 @@ export class UserController {
       let updateData = {};
       let fullName, email, profileImage;
 
-      // 3. Robust Parsing based on Content-Type
-      // We prioritize req.formData() for multipart/form-data as it is the "real" parser in Next.js App Router
-      if (contentType.includes('multipart/form-data')) {
+      // Ensure we don't peek at the body to prevent stream consumption issues
+      // 3. Strict Parser Selection based on Content-Type
+      const isMultipart = contentType.includes('multipart/form-data');
+      console.log(`[DEBUG] Selected Parser Branch: ${isMultipart ? 'formData' : 'json'}`);
+
+      if (isMultipart) {
         try {
+          // DO NOT call req.text() or req.arrayBuffer() before this
           const formData = await req.formData();
           
           fullName = formData.get('fullName');
@@ -123,12 +127,13 @@ export class UserController {
           console.error('[DEBUG] req.formData() failed:', formDataError);
           return Response.json({ 
             success: false, 
-            message: 'Failed to parse multipart data. Ensure the boundary is correct.' 
+            message: 'Failed to parse multipart data. Ensure the Content-Type boundary is valid.' 
           }, { status: 400 });
         }
       } else {
         // Assume JSON if not multipart
         try {
+          // DO NOT call req.text() or req.arrayBuffer() before this
           const body = await req.json();
           fullName = body.fullName;
           email = body.email;
@@ -139,7 +144,7 @@ export class UserController {
           console.error(`[DEBUG] JSON parse failed:`, jsonError);
           return Response.json({ 
             success: false, 
-            message: 'Invalid JSON body. For image uploads, use multipart/form-data.' 
+            message: 'Invalid JSON body. For image uploads, ensure Content-Type is multipart/form-data.' 
           }, { status: 400 });
         }
       }
