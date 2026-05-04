@@ -81,7 +81,34 @@ export class UserController {
       let updateData = {};
 
       try {
-        if (contentType.includes('multipart/form-data')) {
+        // Super-robust detection: Peek at the body to see what it actually is
+        const clonedReq = req.clone();
+        const textBody = await clonedReq.text();
+
+        if (textBody.trim().startsWith('--')) {
+          // Definitely Multipart (starts with boundary)
+          const formData = await req.formData();
+          updateData = {
+            fullName: formData.get('fullName'),
+            email: formData.get('email'),
+            profileImage: formData.get('profileImage')
+          };
+
+          if (updateData.profileImage && typeof updateData.profileImage !== 'string') {
+            const uploadResult = await S3Service.upload(updateData.profileImage, 'profiles');
+            updateData.profileImage = uploadResult.url;
+          } else {
+            delete updateData.profileImage;
+          }
+        } else if (textBody.trim().startsWith('{') || textBody.trim().startsWith('[')) {
+          // Likely JSON
+          const body = JSON.parse(textBody);
+          updateData = {
+            fullName: body?.fullName,
+            email: body?.email
+          };
+        } else if (contentType.includes('multipart/form-data')) {
+          // Fallback to Content-Type if peek was inconclusive but header exists
           const formData = await req.formData();
           updateData = {
             fullName: formData.get('fullName'),
@@ -96,33 +123,15 @@ export class UserController {
             delete updateData.profileImage;
           }
         } else {
-          // Try JSON first, fallback to FormData if it fails (handles cases with incorrect Content-Type headers)
+          // Last resort: assume JSON if anything is there
           try {
-            const body = await req.json();
+            const body = JSON.parse(textBody || '{}');
             updateData = {
               fullName: body?.fullName,
               email: body?.email
             };
-          } catch (jsonError) {
-            // Fallback: If JSON parsing fails, try parsing as FormData (cloning the request to re-read the body)
-            try {
-              const formData = await req.clone().formData();
-              updateData = {
-                fullName: formData.get('fullName'),
-                email: formData.get('email'),
-                profileImage: formData.get('profileImage')
-              };
-              
-              if (updateData.profileImage && typeof updateData.profileImage !== 'string') {
-                const uploadResult = await S3Service.upload(updateData.profileImage, 'profiles');
-                updateData.profileImage = uploadResult.url;
-              } else {
-                delete updateData.profileImage;
-              }
-            } catch (formError) {
-              // If both fail, throw the original JSON error
-              throw jsonError;
-            }
+          } catch (e) {
+            throw new Error('UNABLE_TO_PARSE_BODY');
           }
         }
       } catch (e) {
