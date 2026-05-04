@@ -89,7 +89,7 @@ export class AuthController {
     try {
       await dbConnect();
       
-      const contentType = req.headers.get('content-type') || '';
+      const contentType = (req.headers.get('content-type') || '').toLowerCase();
       let body = {};
 
       // 1. Parse Body (JSON or Multipart)

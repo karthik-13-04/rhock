@@ -77,7 +77,7 @@ export class UserController {
       if (authError) return authError;
 
       // 2. Parse Body (Handle JSON or Multipart)
-      const contentType = req.headers.get('content-type') || '';
+      const contentType = (req.headers.get('content-type') || '').toLowerCase();
       let updateData = {};
 
       try {
