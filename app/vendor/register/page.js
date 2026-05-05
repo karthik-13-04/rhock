@@ -140,6 +140,12 @@ function RegistrationForm() {
     setLoading(true);
     try {
       if (step === 1) {
+        if (!/^[6-9]\d{9}$/.test(formData.mobileNumber || '')) {
+          alert('Please enter a valid 10-digit mobile number');
+          setLoading(false);
+          return;
+        }
+
         const res = await fetch('/api/vendor/register/step-1', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -336,9 +342,10 @@ function RegistrationForm() {
                     </div>
                     <input 
                       type="tel" 
-                      readOnly
+                      maxLength={10}
                       value={formData.mobileNumber}
-                      className="w-full pl-16 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-400 font-medium cursor-not-allowed"
+                      onChange={(e) => setFormData(prev => ({ ...prev, mobileNumber: e.target.value.replace(/\D/g, '') }))}
+                      className="w-full pl-16 pr-4 py-4 bg-white border border-slate-200 rounded-2xl text-slate-700 font-medium outline-none focus:ring-2 focus:ring-[#005596]/10 focus:border-[#005596]"
                     />
                   </div>
                 </div>

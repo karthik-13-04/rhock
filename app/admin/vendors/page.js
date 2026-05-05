@@ -206,7 +206,7 @@ export default function VendorsPage() {
                         <span className={cn(
                           "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest border",
                           vendor.status === 'active' ? "bg-green-50 text-green-700 border-green-100" :
-                          vendor.status === 'pending' ? "bg-orange-50 text-orange-700 border-orange-100" :
+                          vendor.status === 'pending_approval' ? "bg-orange-50 text-orange-700 border-orange-100" :
                           vendor.status === 'rejected' ? "bg-red-50 text-red-700 border-red-100" :
                           "bg-zinc-100 text-zinc-500 border-zinc-200"
                         )}>
@@ -369,7 +369,7 @@ export default function VendorsPage() {
 
                        {/* Action Controls */}
                        <div className="pt-6 flex flex-col gap-4">
-                          {selectedVendor.status === 'pending' && (
+                          {selectedVendor.status === 'pending_approval' && (
                             <div className="flex gap-4">
                                <button 
                                  disabled={!!processingId}
