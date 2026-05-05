@@ -5,7 +5,7 @@ import axios from 'axios';
  * Handles base URL, auth tokens, and centralized error handling.
  */
 const api = axios.create({
-  baseURL: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000',
+  baseURL: process.env.NEXT_PUBLIC_API_URL || '', // Default to empty string for relative paths
   headers: {
     'Content-Type': 'application/json',
   },
