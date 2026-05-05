@@ -44,7 +44,9 @@ function RegistrationForm() {
     district: '',
     mandal: '',
     thumbnailUrl: '',
+    thumbnailKey: '',
     bannerUrl: '',
+    bannerKey: '',
 
     // Step 3
     fullAddress: '',
@@ -93,7 +95,7 @@ function RegistrationForm() {
       const form = new FormData();
       form.append('file', file);
       form.append('vendorId', vendorId);
-      form.append('docType', type === 'thumbnail' ? 'logo' : 'certificate');
+      form.append('docType', type === 'thumbnail' ? 'thumbnail' : 'banner');
 
       const res = await fetch('/api/modules/vendor/upload', {
         method: 'POST',
@@ -108,7 +110,9 @@ function RegistrationForm() {
       setFormData(prev => ({
         ...prev,
         thumbnailUrl: type === 'thumbnail' ? data.data.url : prev.thumbnailUrl,
-        bannerUrl: type === 'banner' ? data.data.url : prev.bannerUrl
+        thumbnailKey: type === 'thumbnail' ? data.data.key : prev.thumbnailKey,
+        bannerUrl: type === 'banner' ? data.data.url : prev.bannerUrl,
+        bannerKey: type === 'banner' ? data.data.key : prev.bannerKey
       }));
     } catch (err) {
       alert(err.message || 'Image upload failed');
@@ -150,7 +154,9 @@ function RegistrationForm() {
             district: formData.district,
             mandal: formData.mandal,
             thumbnailUrl: formData.thumbnailUrl,
-            bannerUrl: formData.bannerUrl
+            thumbnailKey: formData.thumbnailKey,
+            bannerUrl: formData.bannerUrl,
+            bannerKey: formData.bannerKey
           })
         });
         if (res.ok) setStep(3);

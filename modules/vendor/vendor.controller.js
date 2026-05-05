@@ -106,7 +106,9 @@ export class VendorController {
 
       const { 
         vendorId, storeName, category, storeAbout, 
-        state, district, mandal, thumbnailUrl, bannerUrl 
+        state, district, mandal, 
+        thumbnailUrl, thumbnailKey, 
+        bannerUrl, bannerKey 
       } = body;
 
       // 2. Validate Required Fields
@@ -155,7 +157,9 @@ export class VendorController {
         district,
         mandal,
         thumbnailUrl,
-        bannerUrl
+        thumbnailKey,
+        bannerUrl,
+        bannerKey
       });
 
       // 4. Success Response

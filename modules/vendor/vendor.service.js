@@ -276,7 +276,9 @@ export class VendorService {
   static async registerVendorStep2(data) {
     const { 
       vendorId, storeName, category, storeAbout, 
-      state, district, mandal, thumbnailUrl, bannerUrl 
+      state, district, mandal, 
+      thumbnailUrl, thumbnailKey, 
+      bannerUrl, bannerKey 
     } = data;
 
     await dbConnect();
@@ -320,8 +322,10 @@ export class VendorService {
       mandal
     };
     vendor.media = {
-      thumbnailUrl: thumbnailUrl || '',
-      bannerUrl: bannerUrl || '',
+      thumbnailUrl: thumbnailUrl || vendor.media?.thumbnailUrl || '',
+      thumbnailKey: thumbnailKey || vendor.media?.thumbnailKey || '',
+      bannerUrl: bannerUrl || vendor.media?.bannerUrl || '',
+      bannerKey: bannerKey || vendor.media?.bannerKey || '',
       images: vendor.media?.images || []
     };
     vendor.registrationStep = 2;

@@ -186,7 +186,7 @@ export async function saveStep2(vendorId, data) {
  */
 export async function uploadVendorDocument(fileBuffer, fileName, mimeType, vendorId) {
   const folder = `vendors/${vendorId}`;
-  return await uploadToS3(fileBuffer, fileName, folder, mimeType);
+  return await uploadToS3(fileBuffer, folder, fileName, mimeType);
 }
 
 /**
