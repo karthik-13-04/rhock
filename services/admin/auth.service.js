@@ -11,20 +11,25 @@ export const adminAuthService = {
    */
   loginAdmin: async (credentials) => {
     try {
-      // NOTE: Using the generic auth endpoint, filtering by role 'admin'
-      const response = await api.post('/api/auth/verify-otp', credentials);
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(credentials)
+      });
       
-      if (response.data.success && response.data.user.role === 'admin') {
-        const { token, user } = response.data;
+      const data = await response.json();
+      
+      if (data.success) {
+        const { token, admin } = data;
         
         // Persist to localStorage for axios interceptor
         localStorage.setItem('admin_token', token);
-        localStorage.setItem('admin_user', JSON.stringify(user));
+        localStorage.setItem('admin_user', JSON.stringify(admin));
         
-        return { success: true, user };
+        return { success: true, user: admin };
       }
       
-      throw new Error('Access denied. Not an admin account.');
+      throw new Error(data.message || 'Access denied.');
     } catch (error) {
       console.error('[AdminAuthService Login Error]', error);
       throw error.response?.data?.message || error.message || 'Login failed';
