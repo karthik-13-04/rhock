@@ -8,8 +8,20 @@ import {
   Loader2, Map, Navigation, ShieldCheck, LocateFixed, Pin
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { getStates, getDistricts, getMandals } from '../../../utils/locationData';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for Leaflet default icon issue in Next.js
+if (typeof window !== 'undefined') {
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  });
+}
 
 // Wrap the main component in Suspense to handle useSearchParams()
 export default function VendorRegistrationPage() {
@@ -25,14 +37,7 @@ function RegistrationForm() {
   const searchParams = useSearchParams();
   const initialMobile = searchParams.get('mobileNumber') || '';
 
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places']
-  });
-
   const [step, setStep] = useState(1);
-  const [mapRef, setMapRef] = useState(null);
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState([]);
   const [vendorId, setVendorId] = useState(null);
@@ -233,14 +238,13 @@ function RegistrationForm() {
   };
 
   const reverseGeocode = async (lat, lng) => {
-    if (!window.google) return;
-    const geocoder = new window.google.maps.Geocoder();
     try {
-      const response = await geocoder.geocode({ location: { lat, lng } });
-      if (response.results[0]) {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      if (data.display_name) {
         setFormData(prev => ({
           ...prev,
-          fullAddress: response.results[0].formatted_address
+          fullAddress: data.display_name
         }));
       }
     } catch (err) {
@@ -248,22 +252,20 @@ function RegistrationForm() {
     }
   };
 
-  const onMapIdle = () => {
-    if (!mapRef) return;
-    const center = mapRef.getCenter();
-    const lat = center.lat();
-    const lng = center.lng();
-    
-    setFormData(prev => ({
-      ...prev,
-      locationCoordinates: [lng, lat]
-    }));
-    
-    reverseGeocode(lat, lng);
-  };
-
-  const onLoad = (map) => {
-    setMapRef(map);
+  const MapEvents = () => {
+    useMapEvents({
+      moveend: (e) => {
+        const center = e.target.getCenter();
+        const lat = center.lat;
+        const lng = center.lng;
+        setFormData(prev => ({
+          ...prev,
+          locationCoordinates: [lng, lat]
+        }));
+        reverseGeocode(lat, lng);
+      },
+    });
+    return null;
   };
 
   return (
@@ -523,47 +525,31 @@ function RegistrationForm() {
               <div className="space-y-6">
                 <div>
                   <label className="block text-sm font-bold text-[#005596] mb-3">Business Location (Move map to select)</label>
-                  <div className="relative aspect-video rounded-3xl bg-slate-200 overflow-hidden border border-slate-200 shadow-inner">
-                    {!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY ? (
-                      <div className="absolute inset-0 flex flex-col items-center justify-center p-6 text-center bg-red-50 text-red-500">
-                        <Info className="w-8 h-8 mb-2" />
-                        <p className="font-bold">Google Maps API Key Missing</p>
-                        <p className="text-xs opacity-70 mt-1">Please add NEXT_PUBLIC_GOOGLE_MAPS_API_KEY to your environment variables.</p>
-                      </div>
-                    ) : isLoaded ? (
-                      <>
-                        <GoogleMap
-                          mapContainerStyle={{ width: '100%', height: '100%' }}
-                          center={mapCenter}
-                          zoom={17}
-                          onLoad={onLoad}
-                          onIdle={onMapIdle}
-                          options={{
-                            disableDefaultUI: false,
-                            zoomControl: true,
-                            gestureHandling: 'greedy',
-                            clickableIcons: false,
-                            scrollwheel: true
-                          }}
-                        />
-                        {/* Fixed Center Pin Overlay */}
-                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center pb-8">
-                           <div className="relative">
-                              <MapPin className="w-10 h-10 text-[#005596] drop-shadow-lg animate-bounce" fill="white" />
-                              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black/20 rounded-full blur-[1px]" />
-                           </div>
-                        </div>
-                      </>
-                    ) : (
-                      <div className="absolute inset-0 flex items-center justify-center text-slate-400 font-medium bg-slate-50">
-                        <Loader2 className="w-6 h-6 animate-spin mr-2" />
-                        Loading Map...
-                      </div>
-                    )}
+                  <div className="relative aspect-video rounded-3xl bg-slate-200 overflow-hidden border border-slate-200 shadow-inner z-0">
+                    <MapContainer
+                      center={[mapCenter.lat, mapCenter.lng]}
+                      zoom={17}
+                      style={{ width: '100%', height: '100%' }}
+                      scrollWheelZoom={true}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      />
+                      <MapEvents />
+                    </MapContainer>
+
+                    {/* Fixed Center Pin Overlay */}
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center pb-8 z-[400]">
+                       <div className="relative">
+                          <MapPin className="w-10 h-10 text-[#005596] drop-shadow-lg animate-bounce" fill="white" />
+                          <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-black/20 rounded-full blur-[1px]" />
+                       </div>
+                    </div>
                     
                     <button 
                       onClick={getCurrentLocation}
-                      className="absolute bottom-4 right-4 bg-white text-[#005596] p-3 rounded-full shadow-lg hover:bg-slate-50 transition-all z-10"
+                      className="absolute bottom-4 right-4 bg-white text-[#005596] p-3 rounded-full shadow-lg hover:bg-slate-50 transition-all z-[500]"
                       title="Get Current Location"
                     >
                       <LocateFixed className="w-5 h-5" />

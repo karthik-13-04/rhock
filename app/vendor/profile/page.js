@@ -8,8 +8,20 @@ import {
   ChevronRight, Globe, Info, Edit3, Camera
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
 import { getStates, getDistricts, getMandals } from '../../../utils/locationData';
+import 'leaflet/dist/leaflet.css';
+import { MapContainer, TileLayer, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+
+// Fix for Leaflet default icon issue in Next.js
+if (typeof window !== 'undefined') {
+  delete L.Icon.Default.prototype._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.7.1/images/marker-shadow.png',
+  });
+}
 
 export default function VendorProfileWrapper() {
   return (
@@ -33,15 +45,8 @@ function VendorProfilePage() {
   const [saving, setSaving] = useState(false);
   const [profile, setProfile] = useState(null);
   const [categories, setCategories] = useState([]);
-  const [mapRef, setMapRef] = useState(null);
   const [mapCenter, setMapCenter] = useState({ lat: 17.3850, lng: 78.4867 });
   const [activeTab, setActiveTab] = useState('basic');
-
-  const { isLoaded } = useJsApiLoader({
-    id: 'google-map-script',
-    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
-    libraries: ['places']
-  });
 
   const [formData, setFormData] = useState({
     fullName: '',
@@ -156,14 +161,13 @@ function VendorProfilePage() {
   };
 
   const reverseGeocode = async (lat, lng) => {
-    if (!window.google) return;
-    const geocoder = new window.google.maps.Geocoder();
     try {
-      const response = await geocoder.geocode({ location: { lat, lng } });
-      if (response.results[0]) {
+      const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}`);
+      const data = await res.json();
+      if (data.display_name) {
         setFormData(prev => ({
           ...prev,
-          fullAddress: response.results[0].formatted_address
+          fullAddress: data.display_name
         }));
       }
     } catch (err) {
@@ -171,16 +175,20 @@ function VendorProfilePage() {
     }
   };
 
-  const onMapIdle = () => {
-    if (!mapRef) return;
-    const center = mapRef.getCenter();
-    const lat = center.lat();
-    const lng = center.lng();
-    setFormData(prev => ({
-      ...prev,
-      locationCoordinates: [lng, lat]
-    }));
-    reverseGeocode(lat, lng);
+  const MapEvents = () => {
+    useMapEvents({
+      moveend: (e) => {
+        const center = e.target.getCenter();
+        const lat = center.lat;
+        const lng = center.lng;
+        setFormData(prev => ({
+          ...prev,
+          locationCoordinates: [lng, lat]
+        }));
+        reverseGeocode(lat, lng);
+      },
+    });
+    return null;
   };
 
   const handleSave = async () => {
@@ -359,22 +367,22 @@ function VendorProfilePage() {
                 {/* Map Implementation */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-slate-400 uppercase tracking-widest px-1">Pin Location (Drag map)</label>
-                  <div className="relative aspect-video rounded-3xl bg-slate-100 overflow-hidden border border-slate-100 shadow-inner">
-                    {isLoaded && (
-                      <>
-                        <GoogleMap
-                          mapContainerStyle={{ width: '100%', height: '100%' }}
-                          center={mapCenter}
-                          zoom={17}
-                          onLoad={setMapRef}
-                          onIdle={onMapIdle}
-                          options={{ disableDefaultUI: true, gestureHandling: 'greedy' }}
-                        />
-                        <div className="absolute inset-0 pointer-events-none flex items-center justify-center pb-8">
-                           <MapPin className="w-10 h-10 text-[#005596] drop-shadow-lg" fill="white" />
-                        </div>
-                      </>
-                    )}
+                  <div className="relative aspect-video rounded-3xl bg-slate-100 overflow-hidden border border-slate-100 shadow-inner z-0">
+                    <MapContainer
+                      center={[mapCenter.lat, mapCenter.lng]}
+                      zoom={17}
+                      style={{ width: '100%', height: '100%' }}
+                      scrollWheelZoom={true}
+                    >
+                      <TileLayer
+                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+                      />
+                      <MapEvents />
+                    </MapContainer>
+                    <div className="absolute inset-0 pointer-events-none flex items-center justify-center pb-8 z-[400]">
+                       <MapPin className="w-10 h-10 text-[#005596] drop-shadow-lg" fill="white" />
+                    </div>
                   </div>
                 </div>
 
