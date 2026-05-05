@@ -17,13 +17,18 @@ export class S3Service {
       const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
       const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
       const region = process.env.AWS_REGION || 'SIN';
-      const s3Domain = process.env.AWS_S3_DOMAIN ? process.env.AWS_S3_DOMAIN.split('/')[0] : '';
+      
+      // Robustly parse domain: remove protocol and any trailing path
+      const rawDomain = process.env.AWS_S3_DOMAIN || '';
+      const domainWithoutProtocol = rawDomain.replace(/^https?:\/\//i, '');
+      const s3Domain = domainWithoutProtocol.split('/')[0];
 
       if (!accessKeyId || !secretAccessKey || !s3Domain) {
         console.error('[S3Service] Missing environment variables:', {
           accessKeyId: !!accessKeyId,
           secretAccessKey: !!secretAccessKey,
-          s3Domain: !!s3Domain
+          s3Domain: !!s3Domain,
+          rawDomain: rawDomain
         });
       }
 
@@ -36,6 +41,8 @@ export class S3Service {
         },
         forcePathStyle: true, // Contabo requires path style access
       });
+      
+      console.log(`[S3Service] Initialised for endpoint: https://${s3Domain} (Region: ${region})`);
     }
     return this._client;
   }
@@ -52,14 +59,13 @@ export class S3Service {
     try {
       // ── Materialise the bytes ───────────────────────────────────────────
       let buffer;
-      if (typeof file.arrayBuffer === 'function') {
+      if (file && typeof file.arrayBuffer === 'function') {
         buffer = Buffer.from(await file.arrayBuffer());
       } else if (Buffer.isBuffer(file)) {
         buffer = file;
       } else if (file instanceof Uint8Array) {
         buffer = Buffer.from(file);
       } else {
-        // Fallback for objects that might look like files but aren't
         buffer = file;
       }
 
@@ -80,21 +86,23 @@ export class S3Service {
         ? file.type
         : (mimeMap[extension] || 'application/octet-stream'));
 
-      console.log(`[S3Service.upload] Uploading: ${originalName} (${buffer.length} bytes) to ${key}`);
-
       const bucketName = process.env.AWS_BUCKET_NAME;
-      const s3Domain = process.env.AWS_S3_DOMAIN.split('/')[0];
+      const rawDomain = process.env.AWS_S3_DOMAIN || '';
+      const s3Domain = rawDomain.replace(/^https?:\/\//i, '').split('/')[0];
+
+      console.log(`[S3Service.upload] Start: ${originalName} (${buffer.length} bytes)`);
+      console.log(`[S3Service.upload] Target: bucket=${bucketName}, key=${key}, type=${contentType}`);
 
       const command = new PutObjectCommand({
         Bucket: bucketName,
         Key: key,
         Body: buffer,
         ContentType: contentType,
+        ContentLength: buffer.length, // Explicitly set content length
       });
 
       await this.client.send(command);
 
-      // Return the full URL
       const url = `https://${s3Domain}/${bucketName}/${key}`;
       console.log(`[S3Service.upload] SUCCESS: ${url}`);
 
