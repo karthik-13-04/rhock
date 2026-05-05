@@ -1,5 +1,6 @@
 import Vendor from '../../models/vendor.model.js';
 import User from '../../models/user.model.js';
+import Category from '../../models/category.model.js';
 import { dbConnect } from '../../config/database.js';
 
 export class AdminService {
