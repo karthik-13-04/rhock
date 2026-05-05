@@ -1,6 +1,6 @@
-import Vendor from '../models/vendor.model.js';
-import User from '../models/user.model.js';
-import { dbConnect } from '../config/database.js';
+import Vendor from '../../models/vendor.model.js';
+import User from '../../models/user.model.js';
+import { dbConnect } from '../../config/database.js';
 
 export class AdminService {
   /**
