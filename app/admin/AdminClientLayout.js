@@ -35,7 +35,17 @@ export default function AdminClientLayout({ children }) {
   }
 
   return (
-    <div className="min-h-screen bg-white font-sans flex text-zinc-900 overflow-x-hidden">
+    <div 
+      className="min-h-screen bg-[#F3F6FB] font-sans flex text-[#1A1A2E] overflow-x-hidden"
+      style={{
+        '--admin-primary': '#1A5CA8',
+        '--color-admin-primary': '#1A5CA8',
+        '--admin-primary-soft': 'rgba(26, 92, 168, 0.1)',
+        '--color-admin-primary-soft': 'rgba(26, 92, 168, 0.08)',
+        '--admin-primary-glow': 'rgba(26, 92, 168, 0.43)',
+        '--color-admin-primary-glow': 'rgba(26, 92, 168, 0.43)'
+      }}
+    >
       {/* Sidebar Navigation */}
       <Sidebar />
       
