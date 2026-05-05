@@ -400,6 +400,71 @@ export class VendorService {
   }
 
   /**
+   * Get Vendor Profile by ID or User ID
+   * @param {string} id Vendor ID or User ID
+   * @param {boolean} isUserId If true, id is User ID
+   */
+  static async getVendorProfile(id, isUserId = false) {
+    await dbConnect();
+    const query = isUserId ? { userId: id } : { _id: id };
+    return await Vendor.findOne(query).populate('categoryId', 'name');
+  }
+
+  /**
+   * Update Vendor Profile
+   * @param {string} vendorId 
+   * @param {Object} updateData 
+   */
+  static async updateVendorProfile(vendorId, updateData) {
+    await dbConnect();
+    
+    // Clean update data
+    const { 
+      fullName, email, storeName, categoryId, storeAbout, 
+      state, district, mandal, fullAddress, locationCoordinates,
+      thumbnailUrl, thumbnailKey, bannerUrl, bannerKey
+    } = updateData;
+
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) throw new Error('Vendor not found');
+
+    if (fullName) vendor.fullName = fullName;
+    if (email) vendor.email = email;
+    if (storeName) vendor.storeName = storeName;
+    if (categoryId) vendor.categoryId = categoryId;
+    if (storeAbout) vendor.storeAbout = storeAbout;
+    
+    if (state || district || mandal) {
+      vendor.location = {
+        state: state || vendor.location?.state,
+        district: district || vendor.location?.district,
+        mandal: mandal || vendor.location?.mandal
+      };
+    }
+
+    if (fullAddress) vendor.fullAddress = fullAddress;
+    if (locationCoordinates) {
+      vendor.locationCoordinates = {
+        type: 'Point',
+        coordinates: locationCoordinates
+      };
+    }
+
+    if (thumbnailUrl || bannerUrl) {
+      vendor.media = {
+        thumbnailUrl: thumbnailUrl || vendor.media?.thumbnailUrl,
+        thumbnailKey: thumbnailKey || vendor.media?.thumbnailKey,
+        bannerUrl: bannerUrl || vendor.media?.bannerUrl,
+        bannerKey: bannerKey || vendor.media?.bannerKey,
+        images: vendor.media?.images || []
+      };
+    }
+
+    await vendor.save();
+    return vendor;
+  }
+
+  /**
    * Check if a vendor exists by mobile number
    * Returns vendor details if exists
    * @param {string} mobileNumber 

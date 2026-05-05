@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { GoogleMap, useJsApiLoader, MarkerF } from '@react-google-maps/api';
+import { getStates, getDistricts, getMandals } from '../../../utils/locationData';
 
 // Wrap the main component in Suspense to handle useSearchParams()
 export default function VendorRegistrationPage() {
@@ -80,7 +81,13 @@ function RegistrationForm() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prev => {
+      const updated = { ...prev, [name]: value };
+      // Reset district/mandal if parent changes
+      if (name === 'state') { updated.district = ''; updated.mandal = ''; }
+      if (name === 'district') { updated.mandal = ''; }
+      return updated;
+    });
   };
 
   const handleImageUpload = async (file, type) => {
@@ -409,27 +416,33 @@ function RegistrationForm() {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <label className="block text-sm font-bold text-slate-700 mb-2">Select State</label>
-                    <select name="state" value={formData.state} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none">
+                    <select 
+                      name="state" value={formData.state} onChange={handleInputChange} 
+                      className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                    >
                       <option value="">Select state</option>
-                      <option value="Andhra Pradesh">Andhra Pradesh</option>
-                      <option value="Telangana">Telangana</option>
+                      {getStates().map(s => <option key={s} value={s}>{s}</option>)}
                     </select>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Select District</label>
-                      <select name="district" value={formData.district} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none">
+                      <select 
+                        name="district" value={formData.district} onChange={handleInputChange} 
+                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                      >
                         <option value="">Select district</option>
-                        <option value="Hyderabad">Hyderabad</option>
-                        <option value="Krishna">Krishna</option>
+                        {getDistricts(formData.state).map(d => <option key={d} value={d}>{d}</option>)}
                       </select>
                     </div>
                     <div>
                       <label className="block text-sm font-bold text-slate-700 mb-2">Select Mandal</label>
-                      <select name="mandal" value={formData.mandal} onChange={handleInputChange} className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none">
+                      <select 
+                        name="mandal" value={formData.mandal} onChange={handleInputChange} 
+                        className="w-full p-4 bg-white border border-slate-200 rounded-2xl outline-none"
+                      >
                         <option value="">Select mandal</option>
-                        <option value="Ameerpet">Ameerpet</option>
-                        <option value="Vijayawada">Vijayawada</option>
+                        {getMandals(formData.state, formData.district).map(m => <option key={m} value={m}>{m}</option>)}
                       </select>
                     </div>
                   </div>

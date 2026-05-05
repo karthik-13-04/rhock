@@ -438,4 +438,59 @@ export class VendorController {
       }, { status: statusCode });
     }
   }
+
+  /**
+   * GET /api/vendor/profile
+   * AUTH: Required (Vendor Token)
+   */
+  static async getProfile(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const profile = await VendorService.getVendorProfile(user.vendorId);
+      if (!profile) return Response.json({ success: false, message: 'Profile not found' }, { status: 404 });
+
+      return Response.json({
+        success: true,
+        data: profile
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[VendorController.getProfile Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * PATCH /api/vendor/profile
+   * AUTH: Required (Vendor Token)
+   */
+  static async updateProfile(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      let body;
+      try {
+        body = await req.json();
+      } catch (e) {
+        return Response.json({ success: false, message: 'Invalid JSON' }, { status: 400 });
+      }
+
+      const updatedProfile = await VendorService.updateVendorProfile(user.vendorId, body);
+
+      return Response.json({
+        success: true,
+        message: 'Profile updated successfully',
+        data: updatedProfile
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[VendorController.updateProfile Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
 }
