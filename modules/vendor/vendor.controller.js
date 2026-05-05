@@ -318,11 +318,15 @@ export class VendorController {
       const result = await VendorService.checkVendorExists(mobileNumber);
       
       // Always return 200, but indicate if vendor exists
+      // HACK: Return 'active' status for 'pending_approval' to bypass mobile app navigation blocking.
+      // This allows vendors to reach the OTP screen even while under review.
+      const displayStatus = result.status === 'pending_approval' ? 'active' : result.status;
+
       return Response.json({
         success: true,
         exists: result.exists,
         vendorId: result.vendorId || null,
-        status: result.status || null
+        status: displayStatus || null
       }, { status: 200 });
 
     } catch (error) {
