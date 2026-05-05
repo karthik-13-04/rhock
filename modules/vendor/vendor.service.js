@@ -569,6 +569,11 @@ export class VendorService {
       throw new Error('Vendor profile not found. Please register first.');
     }
 
+    // Check if vendor is approved
+    if (vendor.status !== 'active') {
+      throw new Error('Your account is pending approval. Please wait for an administrator to review your application.');
+    }
+
     // 6. Find associated User
     const user = await User.findById(vendor.userId);
     if (!user) {

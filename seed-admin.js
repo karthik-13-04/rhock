@@ -1,42 +1,51 @@
 import mongoose from 'mongoose';
-import dotenv from 'dotenv';
 import User from './models/user.model.js';
-import { dbConnect } from './config/database.js';
+import dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 
-const ADMIN_PHONE = '9493865707';
-
-async function seedAdmin() {
+const seedAdmin = async () => {
   try {
-    await dbConnect();
-    
-    // Find or create the user
-    let user = await User.findOne({ phone: ADMIN_PHONE });
-    
-    if (user) {
-      user.role = 'admin';
-      user.firstName = 'Super';
-      user.lastName = 'Admin';
-      await user.save();
-      console.log(`✅ User ${ADMIN_PHONE} promoted to ADMIN.`);
+    console.log('Connecting to MongoDB...');
+    await mongoose.connect(process.env.MONGODB_URI);
+    console.log('Connected successfully.');
+
+    const adminEmail = 'admin@hotelrockdale.com';
+    const adminPassword = 'AdminPassword123!';
+
+    // Check if admin already exists
+    const existingAdmin = await User.findOne({ email: adminEmail });
+    if (existingAdmin) {
+      console.log('Admin already exists. Updating password...');
+      existingAdmin.password = adminPassword;
+      existingAdmin.role = 'admin';
+      existingAdmin.status = 'active';
+      await existingAdmin.save();
+      console.log('Admin updated successfully.');
     } else {
-      user = new User({
-        phone: ADMIN_PHONE,
+      console.log('Creating new admin...');
+      const newAdmin = new User({
+        fullName: 'Main Admin',
+        email: adminEmail,
+        password: adminPassword,
         role: 'admin',
-        firstName: 'Super',
-        lastName: 'Admin',
-        phoneVerified: true
+        status: 'active',
+        phone: '9999999999' // Placeholder
       });
-      await user.save();
-      console.log(`✅ New ADMIN created with phone ${ADMIN_PHONE}.`);
+      await newAdmin.save();
+      console.log('Admin created successfully.');
     }
-    
+
+    console.log('-----------------------------------');
+    console.log(`Email: ${adminEmail}`);
+    console.log(`Password: ${adminPassword}`);
+    console.log('-----------------------------------');
+
     process.exit(0);
   } catch (error) {
-    console.error('❌ Admin seeding failed:', error);
+    console.error('Seeding failed:', error);
     process.exit(1);
   }
-}
+};
 
 seedAdmin();
