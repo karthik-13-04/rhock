@@ -16,7 +16,7 @@ export class StoreController {
       await dbConnect();
 
       // 2. Extract storeId from URL parameters
-      const { storeId } = params;
+      const { storeId } = await params;
 
       if (!storeId) {
         return Response.json({ 

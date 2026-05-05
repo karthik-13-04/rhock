@@ -81,7 +81,7 @@ export class AdminController {
    */
   static async updateVendorStatus(req, { params }) {
     try {
-      const { id } = params;
+      const { id } = await params;
       const body = await req.json();
       const { status, reason } = body; // 'active' or 'rejected'
 

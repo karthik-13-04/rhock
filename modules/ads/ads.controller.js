@@ -182,7 +182,7 @@ export class AdsController {
       }
 
       // 4. Extract Params and Body
-      const { adId } = params;
+      const { adId } = await params;
       const formData = await req.formData();
       
       const title = formData.get('title');
