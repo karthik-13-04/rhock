@@ -168,7 +168,6 @@ export class AdminController {
       // For now, we can extract from authorization header if needed, 
       // or we just pass a default admin id if auth middleware isn't perfectly injecting it here.
       // Let's assume auth middleware provides it if we use it, or we decode the token.
-      import { verifyToken } from '../../utils/jwt.js';
       const authHeader = req.headers.get('authorization');
       let adminId = null;
       if (authHeader && authHeader.startsWith('Bearer ')) {
