@@ -195,7 +195,7 @@ userSubscriptionSchema.virtual('creditUsagePercentage').get(function () {
 // ==========================================
 // Pre-save: Set dates and snapshot
 // ==========================================
-userSubscriptionSchema.pre('save', function (next) {
+userSubscriptionSchema.pre('save', async function () {
   if (this.isNew) {
     // Set start/end dates
     if (!this.startDate) {
@@ -221,8 +221,6 @@ userSubscriptionSchema.pre('save', function (next) {
       this.finalAmount = this.amount - (this.discount || 0);
     }
   }
-
-  next();
 });
 
 // ==========================================
