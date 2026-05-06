@@ -65,6 +65,13 @@ const vendorSchema = new mongoose.Schema(
       images: [{ type: String }], // Array of store image URLs
     },
 
+    // Social Links
+    website: { type: String, trim: true, default: '' },
+    instagram: { type: String, trim: true, default: '' },
+    linkedin: { type: String, trim: true, default: '' },
+    youtube: { type: String, trim: true, default: '' },
+    facebook: { type: String, trim: true, default: '' },
+
     workingHours: {
       type: String,
       trim: true,

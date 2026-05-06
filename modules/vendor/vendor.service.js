@@ -418,22 +418,57 @@ export class VendorService {
   static async updateVendorProfile(vendorId, updateData) {
     await dbConnect();
     
-    // Clean update data
+    // Clean and Map update data (handle aliases)
     const { 
-      fullName, email, storeName, categoryId, storeAbout, 
-      state, district, mandal, fullAddress, locationCoordinates,
-      thumbnailUrl, thumbnailKey, bannerUrl, bannerKey
+      fullName, ownerName,
+      email, 
+      storeName, 
+      categoryId, category,
+      storeAbout, 
+      state, district, mandal, 
+      fullAddress, 
+      locationCoordinates, location,
+      thumbnailUrl, thumbnailKey, 
+      bannerUrl, bannerKey,
+      website, instagram, linkedin, youtube, facebook,
+      agentCode
     } = updateData;
 
     const vendor = await Vendor.findById(vendorId);
     if (!vendor) throw new Error('Vendor not found');
 
-    if (fullName) vendor.fullName = fullName;
+    // Handle Aliases
+    if (fullName || ownerName) vendor.fullName = fullName || ownerName;
     if (email) vendor.email = email;
     if (storeName) vendor.storeName = storeName;
-    if (categoryId) vendor.categoryId = categoryId;
     if (storeAbout) vendor.storeAbout = storeAbout;
+    if (fullAddress) vendor.fullAddress = fullAddress;
+    if (agentCode) vendor.agentCode = agentCode;
+
+    // Social Links
+    if (website !== undefined) vendor.website = website;
+    if (instagram !== undefined) vendor.instagram = instagram;
+    if (linkedin !== undefined) vendor.linkedin = linkedin;
+    if (youtube !== undefined) vendor.youtube = youtube;
+    if (facebook !== undefined) vendor.facebook = facebook;
     
+    // Category Handling (ID or Name)
+    if (categoryId) {
+      vendor.categoryId = categoryId;
+    } else if (category) {
+      // Search or create category by name
+      let categoryObj = await Category.findOne({ 
+        name: { $regex: new RegExp(`^${category}$`, 'i') },
+        isActive: true 
+      });
+      if (!categoryObj) {
+        categoryObj = new Category({ name: category, isActive: true });
+        await categoryObj.save();
+      }
+      vendor.categoryId = categoryObj._id;
+    }
+
+    // Location (State/District/Mandal)
     if (state || district || mandal) {
       vendor.location = {
         state: state || vendor.location?.state,
@@ -442,26 +477,31 @@ export class VendorService {
       };
     }
 
-    if (fullAddress) vendor.fullAddress = fullAddress;
+    // GeoJSON Location
     if (locationCoordinates) {
       vendor.locationCoordinates = {
         type: 'Point',
         coordinates: locationCoordinates
       };
+    } else if (location && location.type === 'Point' && location.coordinates) {
+      vendor.locationCoordinates = location;
     }
 
-    if (thumbnailUrl || bannerUrl) {
+    // Media
+    if (thumbnailUrl || bannerUrl || thumbnailKey || bannerKey) {
       vendor.media = {
-        thumbnailUrl: thumbnailUrl || vendor.media?.thumbnailUrl,
-        thumbnailKey: thumbnailKey || vendor.media?.thumbnailKey,
-        bannerUrl: bannerUrl || vendor.media?.bannerUrl,
-        bannerKey: bannerKey || vendor.media?.bannerKey,
+        thumbnailUrl: thumbnailUrl || vendor.media?.thumbnailUrl || '',
+        thumbnailKey: thumbnailKey || vendor.media?.thumbnailKey || '',
+        bannerUrl: bannerUrl || vendor.media?.bannerUrl || '',
+        bannerKey: bannerKey || vendor.media?.bannerKey || '',
         images: vendor.media?.images || []
       };
     }
 
     await vendor.save();
-    return vendor;
+    
+    // Return populated profile
+    return await Vendor.findById(vendorId).populate('categoryId', 'name');
   }
 
   /**

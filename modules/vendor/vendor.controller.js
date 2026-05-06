@@ -465,9 +465,23 @@ export class VendorController {
         await profile.save();
       }
 
+      // Format response to ensure stability and requested top-level fields
+      const formattedProfile = {
+        ...profile.toObject(),
+        vendorId: profile._id,
+        ownerName: profile.fullName,
+        phoneNumber: profile.mobileNumber,
+        state: profile.location?.state || '',
+        district: profile.location?.district || '',
+        mandal: profile.location?.mandal || '',
+        thumbnailUrl: profile.media?.thumbnailUrl || '',
+        bannerUrl: profile.media?.bannerUrl || '',
+        category: profile.categoryId?.name || ''
+      };
+
       return Response.json({
         success: true,
-        data: profile
+        data: formattedProfile
       }, { status: 200 });
 
     } catch (error) {
@@ -495,10 +509,24 @@ export class VendorController {
 
       const updatedProfile = await VendorService.updateVendorProfile(user.vendorId, body);
 
+      // Format response to ensure stability and requested top-level fields
+      const formattedProfile = {
+        ...updatedProfile.toObject(),
+        vendorId: updatedProfile._id,
+        ownerName: updatedProfile.fullName,
+        phoneNumber: updatedProfile.mobileNumber,
+        state: updatedProfile.location?.state || '',
+        district: updatedProfile.location?.district || '',
+        mandal: updatedProfile.location?.mandal || '',
+        thumbnailUrl: updatedProfile.media?.thumbnailUrl || '',
+        bannerUrl: updatedProfile.media?.bannerUrl || '',
+        category: updatedProfile.categoryId?.name || ''
+      };
+
       return Response.json({
         success: true,
         message: 'Profile updated successfully',
-        data: updatedProfile
+        data: formattedProfile
       }, { status: 200 });
 
     } catch (error) {
