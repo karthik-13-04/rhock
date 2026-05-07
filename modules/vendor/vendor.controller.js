@@ -6,7 +6,7 @@ import { S3Service } from '../../services/s3.service.js';
 import { FileValidator } from '../../utils/fileValidator.js';
 import { generateToken } from '../../utils/jwt.js';
 import { getPlans, getPlan, purchaseSubscription, verifyPayment } from '../../services/subscription.service.js';
-import { createAd } from '../../services/ad.service.js';
+import { createAd, listAds, getAd, updateAd, deleteAd } from '../../services/ad.service.js';
 import { razorpayService } from '../../services/razorpay.service.js';
 import User from '../../models/user.model.js';
 import sizeOf from 'image-size';
@@ -611,7 +611,17 @@ export class VendorController {
       return Response.json({
         success: true,
         message: 'Ad created successfully and is pending admin approval.',
-        data: result.ad,
+        data: {
+          _id: result.ad._id,
+          title: result.ad.title,
+          description: result.ad.description,
+          url: result.ad.url,
+          mediaUrl: result.ad.primaryImage,
+          status: result.ad.status,
+          createdAt: result.ad.createdAt,
+          viewCount: result.ad.views || 0,
+          canEdit: result.ad.canEdit
+        },
         remainingCredits: result.remainingCredits
       }, { status: 201 });
 
@@ -619,6 +629,64 @@ export class VendorController {
       console.error('[VendorController.createAd Error]', error);
       const statusCode = error.statusCode || 500;
       return Response.json({ success: false, message: error.message }, { status: statusCode });
+    }
+  }
+
+  /**
+   * GET /api/vendor/ads
+   * Vendor lists their own ads with status filtering and pagination
+   */
+  static async getAds(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const { searchParams } = new URL(req.url);
+      const status = searchParams.get('status');
+      const page = parseInt(searchParams.get('page')) || 1;
+      const limit = parseInt(searchParams.get('limit')) || 10;
+
+      const query = { all: false }; // only user's ads
+      if (status) {
+        // Support comma separated status values
+        if (status.includes(',')) {
+          query.status = { $in: status.split(',') };
+        } else {
+          query.status = status;
+        }
+      }
+
+      const result = await listAds(query, page, limit, user.id);
+
+      // Format data for mobile app
+      const formattedAds = result.ads.map(ad => ({
+        _id: ad._id,
+        title: ad.title,
+        description: ad.description,
+        url: ad.url,
+        mediaUrl: ad.images?.find(img => img.isPrimary)?.url || ad.images?.[0]?.url || '',
+        status: ad.status,
+        viewCount: ad.views || 0,
+        createdAt: ad.createdAt,
+        updatedAt: ad.updatedAt,
+        canEdit: ['pending', 'rejected', 'draft'].includes(ad.status)
+      }));
+
+      return Response.json({
+        success: true,
+        data: formattedAds,
+        pagination: {
+          page: result.page,
+          limit: result.limit,
+          total: result.total,
+          hasMore: result.hasNextPage
+        }
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[VendorController.getAds Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
     }
   }
 
@@ -654,6 +722,68 @@ export class VendorController {
     }
   }
 
+
+  /**
+   * GET /api/vendor/ads/:id
+   * Vendor fetches a single ad
+   */
+  static async getAd(req, { params }) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const { id } = await params;
+      const ad = await getAd(id); // Use the imported getAd from ad.service
+
+      // Check ownership
+      if (ad.user.toString() !== user.id) {
+        return Response.json({ success: false, message: 'Unauthorized' }, { status: 403 });
+      }
+
+      return Response.json({ success: true, data: ad }, { status: 200 });
+    } catch (error) {
+      return Response.json({ success: false, message: error.message }, { status: error.statusCode || 500 });
+    }
+  }
+
+  /**
+   * PATCH /api/vendor/ads/:id
+   * Vendor updates their own ad
+   */
+  static async updateAd(req, { params }) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const { id } = await params;
+      const body = await req.json();
+
+      const updatedAd = await updateAd(id, user.id, body);
+      return Response.json({ success: true, message: 'Ad updated successfully', data: updatedAd }, { status: 200 });
+    } catch (error) {
+      return Response.json({ success: false, message: error.message }, { status: error.statusCode || 500 });
+    }
+  }
+
+  /**
+   * DELETE /api/vendor/ads/:id
+   * Vendor deletes their own ad
+   */
+  static async deleteAd(req, { params }) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const { id } = await params;
+      await deleteAd(id, user.id);
+      return Response.json({ success: true, message: 'Ad deleted successfully' }, { status: 200 });
+    } catch (error) {
+      return Response.json({ success: false, message: error.message }, { status: error.statusCode || 500 });
+    }
+  }
 
   /**
    * GET /api/vendor/ads/credits

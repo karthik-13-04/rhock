@@ -115,7 +115,7 @@ const adSchema = new mongoose.Schema(
     // ==========================================
     status: {
       type: String,
-      enum: ['draft', 'pending', 'approved', 'rejected', 'expired', 'deleted'],
+      enum: ['draft', 'pending', 'approved', 'active', 'rejected', 'expired', 'deleted'],
       default: 'pending',
       index: true,
     },
@@ -249,6 +249,14 @@ adSchema.virtual('daysRemaining').get(function () {
 adSchema.virtual('primaryImage').get(function () {
   const primary = this.images?.find((img) => img.isPrimary);
   return primary?.url || this.images?.[0]?.url || null;
+});
+
+/**
+ * Check if the ad can be edited by the vendor
+ * (Only pending or rejected ads are typically editable)
+ */
+adSchema.virtual('canEdit').get(function () {
+  return ['pending', 'rejected', 'draft'].includes(this.status);
 });
 
 // ==========================================

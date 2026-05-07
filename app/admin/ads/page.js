@@ -10,6 +10,7 @@ export default function AdsPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [statusFilter, setStatusFilter] = useState("pending");
   const [processingId, setProcessingId] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -27,7 +28,12 @@ export default function AdsPage() {
   const fetchAds = async () => {
     try {
       setLoading(true);
-      const data = await adsService.getAds({ page, limit: 20, search: searchTerm });
+      const data = await adsService.getAds({ 
+        page, 
+        limit: 20, 
+        search: searchTerm,
+        status: statusFilter === 'all' ? '' : statusFilter
+      });
       setAds(data.ads || []);
       setTotalPages(data.totalPages || 1);
     } catch (err) {
@@ -39,7 +45,7 @@ export default function AdsPage() {
 
   useEffect(() => {
     fetchAds();
-  }, [page, searchTerm]);
+  }, [page, searchTerm, statusFilter]);
 
   const handleReview = async (id, status) => {
     setProcessingId(id);
@@ -107,7 +113,23 @@ export default function AdsPage() {
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">Review, approve, and manage vendor ads.</p>
         </div>
         
-        <div className="flex items-center gap-3 w-full sm:w-auto">
+        <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+          <div className="flex bg-zinc-100 dark:bg-zinc-800 p-1 rounded-xl">
+            {['pending', 'approved', 'rejected', 'all'].map((status) => (
+              <button
+                key={status}
+                onClick={() => setStatusFilter(status)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium capitalize transition-all ${
+                  statusFilter === status 
+                    ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-zinc-100 shadow-sm' 
+                    : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                }`}
+              >
+                {status}
+              </button>
+            ))}
+          </div>
+
           <div className="relative w-full sm:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" size={16} />
             <input 
