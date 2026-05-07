@@ -185,10 +185,8 @@ export class AdminController {
       }
 
       const body = await req.json();
-      console.log(`[AdminController.approveAd] ID: ${id}, Body:`, body);
-      
-      const action = body.action || body.status; // Support both naming conventions
-      const notes = body.notes || '';
+      const action = body.action || body.status; // Support both 'action' and 'status' from frontend
+      const notes = body.notes || 'Admin moderation';
 
       const authHeader = req.headers.get('authorization');
       let adminId = null;
