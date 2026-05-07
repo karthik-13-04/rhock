@@ -80,9 +80,12 @@ export async function createAd(data, userId) {
   // Validate credit type
   const creditsRequired = CREDIT_COSTS[creditType] || CREDIT_COSTS.standard;
 
+  console.log(`[AdService] Starting creation for user ${userId}. Required credits: ${creditsRequired}`);
+
   // Find the user
   const user = await User.findById(userId);
   if (!user) {
+    console.error(`[AdService] User ${userId} not found`);
     throw {
       statusCode: 404,
       message: 'User not found',
@@ -91,6 +94,7 @@ export async function createAd(data, userId) {
   }
 
   // Find vendor profile
+  console.log(`[AdService] Locating vendor profile for userId ${userId}`);
   let vendor = await Vendor.findOne({ userId });
 
   // Fallback: Check if user has a vendorProfile link
@@ -102,7 +106,9 @@ export async function createAd(data, userId) {
   if (!vendor) {
     vendor = await Vendor.findOne({ user: userId });
   }
+  
   if (!vendor) {
+    console.error(`[AdService] Vendor profile not found for user ${userId}`);
     throw {
       statusCode: 400,
       message: 'Vendor registration required before posting ads',
@@ -112,6 +118,7 @@ export async function createAd(data, userId) {
 
   // Check if user has enough credits
   if (user.coinBalance < creditsRequired) {
+    console.warn(`[AdService] Insufficient credits for user ${userId}. Has: ${user.coinBalance}, Needs: ${creditsRequired}`);
     throw {
       statusCode: 402,
       message: `Insufficient credits. You need ${creditsRequired} credits but have ${user.coinBalance}`,
@@ -124,6 +131,7 @@ export async function createAd(data, userId) {
   }
 
   // Deduct credits (atomic operation to prevent double spending)
+  console.log(`[AdService] Deducting ${creditsRequired} credits from user ${userId}`);
   const updatedUser = await User.findOneAndUpdate(
     { _id: userId, coinBalance: { $gte: creditsRequired } },
     { $inc: { coinBalance: -creditsRequired } },
@@ -131,6 +139,7 @@ export async function createAd(data, userId) {
   );
 
   if (!updatedUser) {
+    console.error(`[AdService] Credit deduction failed for user ${userId} (Concurrency issue)`);
     throw {
       statusCode: 409,
       message: 'Credits were spent by another request. Please try again.',
@@ -139,7 +148,8 @@ export async function createAd(data, userId) {
   }
 
   // Create the ad
-  const adData = {
+  console.log(`[AdService] Saving new ad document for vendor ${vendor._id}`);
+  const adDataToSave = {
     user: userId,
     vendor: vendor._id,
     title,
@@ -162,12 +172,17 @@ export async function createAd(data, userId) {
     priority: creditType === 'premium' ? 5 : creditType === 'featured' ? 3 : 0,
   };
 
-  const ad = new Ad(adData);
+  const ad = new Ad(adDataToSave);
   await ad.save();
+  console.log(`[AdService] Ad saved successfully with ID: ${ad._id}`);
 
-  // Populate vendor info for response
-  if (ad && typeof ad.populate === 'function') {
-    await ad.populate({ path: 'vendor', select: 'fullName storeName email' });
+  // Populate vendor info for response using static method (more robust)
+  try {
+    console.log(`[AdService] Populating vendor info for ad ${ad._id}`);
+    await Ad.populate(ad, { path: 'vendor', select: 'fullName storeName email' });
+  } catch (popErr) {
+    console.error(`[AdService] Population warning (non-fatal):`, popErr.message);
+    // Continue even if populate fails, as the ad is already saved
   }
 
   return {

@@ -267,7 +267,7 @@ adSchema.virtual('canEdit').get(function () {
  * Auto-generate slug from title
  * Auto-set expiresAt based on duration
  */
-adSchema.pre('save', function (next) {
+adSchema.pre('save', function () {
   // Generate slug if not set
   if (!this.slug && this.title) {
     this.slug = this.title
@@ -282,8 +282,6 @@ adSchema.pre('save', function (next) {
   if (this.isNew && this.durationDays && !this.expiresAt) {
     this.expiresAt = new Date(Date.now() + this.durationDays * 24 * 60 * 60 * 1000);
   }
-
-  next();
 });
 
 // ==========================================
