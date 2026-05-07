@@ -249,11 +249,10 @@ export class VendorController {
   }
 
   /**
-   * POST /api/vendor/store/create
-   * Vendor Creates Store
-   * AUTH: Vendor Token Required
+   * POST /api/vendor/register/setup-store
+   * Vendor Setup Store Details (Legacy/Internal)
    */
-  static async createStore(req) {
+  static async setupStore(req) {
     try {
       await dbConnect();
 
@@ -281,18 +280,18 @@ export class VendorController {
         }, { status: 400 });
       }
 
-      // 3. Create Store
+      // 3. Create Store (Updates Vendor Doc)
       const vendor = await VendorService.createStore(user.id, body);
 
       return Response.json({
         success: true,
-        message: 'Store created successfully',
+        message: 'Store details updated successfully',
         storeId: vendor._id,
         status: vendor.status
       }, { status: 200 });
 
     } catch (error) {
-      console.error('[VendorController.createStore Error]', error);
+      console.error('[VendorController.setupStore Error]', error);
       return Response.json({
         success: false,
         message: error.message || 'Internal server error'

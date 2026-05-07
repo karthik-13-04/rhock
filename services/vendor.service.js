@@ -50,12 +50,12 @@ export async function saveStep1(userId, data) {
   }
 
   // Find existing vendor draft or create new
-  let vendor = await Vendor.findOne({ user: userId });
+  let vendor = await Vendor.findOne({ userId });
 
   if (!vendor) {
     // Link vendor to user
     vendor = new Vendor({
-      user: userId,
+      userId,
       step1: { firstName, lastName, email, phone },
       currentStep: 1,
       registrationStatus: 'step1_complete',
@@ -297,7 +297,7 @@ export async function submitRegistration(vendorId) {
   await vendor.save();
 
   // Update user role to vendor
-  await User.findByIdAndUpdate(vendor.user, {
+  await User.findByIdAndUpdate(vendor.userId, {
     role: 'vendor',
   });
 
@@ -315,7 +315,7 @@ export async function submitRegistration(vendorId) {
  * @returns {Promise<object>} Vendor document
  */
 export async function getRegistration(vendorId, userId) {
-  const vendor = await Vendor.findOne({ _id: vendorId, user: userId });
+  const vendor = await Vendor.findOne({ _id: vendorId, userId });
 
   if (!vendor) {
     throw {
@@ -334,7 +334,7 @@ export async function getRegistration(vendorId, userId) {
  * @returns {Promise<object|null>} Vendor document
  */
 export async function getRegistrationByUser(userId) {
-  return await Vendor.findOne({ user: userId });
+  return await Vendor.findOne({ userId });
 }
 
 /**

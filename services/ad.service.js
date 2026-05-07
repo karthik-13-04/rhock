@@ -90,7 +90,17 @@ export async function createAd(data, userId) {
   }
 
   // Find vendor profile
-  const vendor = await Vendor.findOne({ user: userId });
+  let vendor = await Vendor.findOne({ userId });
+
+  // Fallback: Check if user has a vendorProfile link
+  if (!vendor && user.vendorProfile) {
+    vendor = await Vendor.findById(user.vendorProfile);
+  }
+
+  // Second Fallback: Check legacy 'user' field
+  if (!vendor) {
+    vendor = await Vendor.findOne({ user: userId });
+  }
   if (!vendor) {
     throw {
       statusCode: 400,
