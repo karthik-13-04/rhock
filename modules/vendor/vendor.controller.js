@@ -792,12 +792,63 @@ export class VendorController {
       if (authError) return authError;
 
       const { id } = await params;
-      const body = await req.json();
+      const contentType = req.headers.get('content-type') || '';
+      
+      let updateData = {};
+      
+      if (contentType.includes('multipart/form-data')) {
+        const formData = await req.formData();
+        
+        // Extract fields
+        const title = formData.get('title');
+        const description = formData.get('description');
+        const url = formData.get('url');
+        const media = formData.get('media'); // New file if provided
+        
+        if (title) updateData.title = title;
+        if (description) updateData.description = description;
+        if (url !== null) updateData.url = url;
+        
+        // Handle new image upload if present
+        if (media && typeof media === 'object' && media.size > 0) {
+          try {
+            const buffer = Buffer.from(await media.arrayBuffer());
+            if (buffer.length > 100) {
+              const uploadResult = await S3Service.upload(buffer, 'ads', media.name || 'ad-update', media.type || 'image/jpeg');
+              updateData.images = [{
+                url: uploadResult.url,
+                key: uploadResult.key,
+                alt: title || 'Updated Ad Image',
+                isPrimary: true
+              }];
+            }
+          } catch (uploadErr) {
+            console.error('[VendorController.updateAd] Image upload failed:', uploadErr);
+            // We continue with other updates even if image fails, or we could throw
+          }
+        }
+      } else {
+        // Handle JSON update
+        updateData = await req.json();
+      }
 
-      const updatedAd = await updateAdService(id, user.id, body);
-      return Response.json({ success: true, message: 'Ad updated successfully', data: updatedAd }, { status: 200 });
+      if (Object.keys(updateData).length === 0) {
+        return Response.json({ success: false, message: 'No update data provided' }, { status: 400 });
+      }
+
+      const updatedAd = await updateAdService(id, user.id, updateData);
+      return Response.json({ 
+        success: true, 
+        message: 'Ad updated successfully and submitted for re-approval', 
+        data: updatedAd 
+      }, { status: 200 });
+      
     } catch (error) {
-      return Response.json({ success: false, message: error.message }, { status: error.statusCode || 500 });
+      console.error('[VendorController.updateAd Fatal Error]', error);
+      return Response.json({ 
+        success: false, 
+        message: error.message || 'Internal server error' 
+      }, { status: error.statusCode || 500 });
     }
   }
 

@@ -236,10 +236,9 @@ export async function updateAd(adId, userId, data) {
     }
   }
 
-  // If status was rejected, reset to pending after edit
-  if (ad.status === 'rejected') {
-    ad.status = 'pending';
-  }
+  // Always reset to pending after edit to require admin re-approval
+  ad.status = 'pending';
+  ad.reviewNotes = 'Edited by vendor, pending re-approval';
 
   await ad.save();
 
