@@ -164,7 +164,7 @@ export async function createAd(data, userId) {
   const ad = await Ad.create(adData);
 
   // Populate vendor info for response
-  await ad.populate('vendor', 'step1 step2.businessName');
+  await ad.populate({ path: 'vendor', select: 'fullName storeName email' });
 
   return {
     ad,

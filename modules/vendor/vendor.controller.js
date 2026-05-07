@@ -6,7 +6,13 @@ import { S3Service } from '../../services/s3.service.js';
 import { FileValidator } from '../../utils/fileValidator.js';
 import { generateToken } from '../../utils/jwt.js';
 import { getPlans, getPlan, purchaseSubscription, verifyPayment } from '../../services/subscription.service.js';
-import { createAd, listAds, getAd, updateAd, deleteAd } from '../../services/ad.service.js';
+import { 
+  createAd as createAdService, 
+  listAds as listAdsService, 
+  getAd as getAdService, 
+  updateAd as updateAdService, 
+  deleteAd as deleteAdService 
+} from '../../services/ad.service.js';
 import { razorpayService } from '../../services/razorpay.service.js';
 import User from '../../models/user.model.js';
 import sizeOf from 'image-size';
@@ -605,7 +611,7 @@ export class VendorController {
         category: 'General', // Default category or could be extracted from vendor profile
       };
       
-      const result = await createAd(adData, user.id);
+      const result = await createAdService(adData, user.id);
 
       return Response.json({
         success: true,
@@ -656,7 +662,7 @@ export class VendorController {
         }
       }
 
-      const result = await listAds(query, page, limit, user.id);
+      const result = await listAdsService(query, page, limit, user.id);
 
       // Format data for mobile app
       const formattedAds = result.ads.map(ad => ({
@@ -733,7 +739,7 @@ export class VendorController {
       if (authError) return authError;
 
       const { id } = await params;
-      const ad = await getAd(id); // Use the imported getAd from ad.service
+      const ad = await getAdService(id); // Use the imported getAd from ad.service
 
       // Check ownership
       if (ad.user.toString() !== user.id) {
@@ -759,7 +765,7 @@ export class VendorController {
       const { id } = await params;
       const body = await req.json();
 
-      const updatedAd = await updateAd(id, user.id, body);
+      const updatedAd = await updateAdService(id, user.id, body);
       return Response.json({ success: true, message: 'Ad updated successfully', data: updatedAd }, { status: 200 });
     } catch (error) {
       return Response.json({ success: false, message: error.message }, { status: error.statusCode || 500 });
@@ -777,7 +783,7 @@ export class VendorController {
       if (authError) return authError;
 
       const { id } = await params;
-      await deleteAd(id, user.id);
+      await deleteAdService(id, user.id);
       return Response.json({ success: true, message: 'Ad deleted successfully' }, { status: 200 });
     } catch (error) {
       return Response.json({ success: false, message: error.message }, { status: error.statusCode || 500 });
