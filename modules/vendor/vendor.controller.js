@@ -585,21 +585,27 @@ export class VendorController {
 
       // 3. Validate Image dimensions (450x525)
       const buffer = Buffer.from(await media.arrayBuffer());
+      
+      if (buffer.length < 10) {
+        return Response.json({ success: false, message: 'Uploaded file is too small or corrupt' }, { status: 400 });
+      }
+
       let dimensions;
+      let validationFailed = false;
       try {
         dimensions = sizeOf(buffer);
       } catch (err) {
         console.error('[sizeOf Error]', err);
-        return Response.json({ success: false, message: 'Failed to process image dimensions' }, { status: 400 });
+        validationFailed = true; // Skip dimension check if parsing fails
       }
       
-      if (dimensions.width !== 450 || dimensions.height !== 525) {
+      if (!validationFailed && (dimensions.width !== 450 || dimensions.height !== 525)) {
         return Response.json({ 
           success: false, 
           message: `Image dimensions must be exactly 450w x 525h. Uploaded image is ${dimensions.width}w x ${dimensions.height}h.`
         }, { status: 400 });
       }
-
+      
       // 4. Upload Image to S3
       const uploadResult = await S3Service.upload(buffer, 'ads', media.name, media.type);
       const images = [{
