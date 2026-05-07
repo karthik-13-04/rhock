@@ -15,7 +15,8 @@ import {
 } from '../../services/ad.service.js';
 import { razorpayService } from '../../services/razorpay.service.js';
 import User from '../../models/user.model.js';
-import sizeOf from 'image-size';
+import sizeOfImport from 'image-size';
+const sizeOf = typeof sizeOfImport === 'function' ? sizeOfImport : sizeOfImport.default;
 
 /**
  * Vendor Controller
@@ -584,7 +585,13 @@ export class VendorController {
 
       // 3. Validate Image dimensions (450x525)
       const buffer = Buffer.from(await media.arrayBuffer());
-      const dimensions = sizeOf(buffer);
+      let dimensions;
+      try {
+        dimensions = sizeOf(buffer);
+      } catch (err) {
+        console.error('[sizeOf Error]', err);
+        return Response.json({ success: false, message: 'Failed to process image dimensions' }, { status: 400 });
+      }
       
       if (dimensions.width !== 450 || dimensions.height !== 525) {
         return Response.json({ 
@@ -633,7 +640,11 @@ export class VendorController {
     } catch (error) {
       console.error('[VendorController.createAd Error]', error);
       const statusCode = error.statusCode || 500;
-      return Response.json({ success: false, message: error.message }, { status: statusCode });
+      return Response.json({ 
+        success: false, 
+        message: error.message || 'Internal server error',
+        debug: process.env.NODE_ENV === 'development' ? error.stack : undefined 
+      }, { status: statusCode });
     }
   }
 

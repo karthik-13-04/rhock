@@ -161,10 +161,13 @@ export async function createAd(data, userId) {
     priority: creditType === 'premium' ? 5 : creditType === 'featured' ? 3 : 0,
   };
 
-  const ad = await Ad.create(adData);
+  const ad = new Ad(adData);
+  await ad.save();
 
   // Populate vendor info for response
-  await ad.populate({ path: 'vendor', select: 'fullName storeName email' });
+  if (ad && typeof ad.populate === 'function') {
+    await ad.populate({ path: 'vendor', select: 'fullName storeName email' });
+  }
 
   return {
     ad,
