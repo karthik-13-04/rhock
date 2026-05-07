@@ -180,7 +180,7 @@ export default function AdsPage() {
                 </tr>
               ) : (
                 ads.map((ad) => {
-                  const businessName = ad.vendor?.step2?.businessName || 'Unknown Vendor';
+                  const businessName = ad.vendor?.storeName || ad.vendor?.fullName || 'Unknown Vendor';
                   const primaryImageUrl = ad.images?.find(img => img.isPrimary)?.url || ad.images?.[0]?.url;
 
                   return (

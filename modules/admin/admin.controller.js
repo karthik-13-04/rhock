@@ -177,7 +177,13 @@ export class AdminController {
   static async approveAd(req, { params }) {
     try {
       await dbConnect();
-      const { id } = await params;
+      const resolvedParams = await params;
+      const id = resolvedParams.id || resolvedParams.adId;
+
+      if (!id) {
+        return Response.json({ success: false, message: 'Ad ID is required' }, { status: 400 });
+      }
+
       const body = await req.json();
       const { action, notes } = body; // 'approve' or 'reject'
 
