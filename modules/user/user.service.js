@@ -15,7 +15,7 @@ export class UserService {
   static async getUserProfile(userId) {
     // We only select the non-sensitive fields required for the profile view
     const user = await User.findById(userId)
-      .select('firstName lastName email profileImage phone referralCode coinBalance createdAt')
+      .select('firstName lastName email profileImage phone referralCode coinBalance location createdAt')
       .lean();
 
     return user;
@@ -52,6 +52,30 @@ export class UserService {
     if (!user) throw new Error('User account not found');
 
     return user;
+  }
+
+  /**
+   * Save or update the user's GPS location and address details
+   * @param {string} userId 
+   * @param {Object} locationData 
+   */
+  static async saveLocation(userId, locationData) {
+    const user = await User.findByIdAndUpdate(
+      userId,
+      { 
+        $set: { 
+          location: {
+            ...locationData,
+            lastUpdated: new Date()
+          }
+        } 
+      },
+      { new: true }
+    ).select('location');
+
+    if (!user) throw new Error('User account not found');
+
+    return user.location;
   }
 
   /**

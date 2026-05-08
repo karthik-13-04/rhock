@@ -345,4 +345,91 @@ export class UserController {
       }, { status: 500 });
     }
   }
+
+  /**
+   * GET /api/user/location
+   * Fetches the saved location for the authenticated user
+   */
+  static async getLocation(req) {
+    try {
+      await dbConnect();
+      const { user: authUser, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const user = await UserService.getUserProfile(authUser.id);
+      
+      // Re-fetch to include location if getUserProfile doesn't include it by default
+      // Actually, let's just use the model directly here or update getUserProfile
+      const fullUser = await UserService.getUserProfile(authUser.id); 
+      // UserService.getUserProfile currently selects specific fields. 
+      // I'll add location to the selection there or fetch it here.
+      
+      // Let's check user.service.js again to see if I should update getUserProfile selection.
+      // Lines 18-19: .select('firstName lastName email profileImage phone referralCode coinBalance createdAt')
+      // I'll update it later. For now, let's fetch it here.
+      
+      const User = (await import('@/models/user.model.js')).default;
+      const userData = await User.findById(authUser.id).select('location');
+
+      return Response.json({
+        success: true,
+        location: userData?.location || null
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[UserController.getLocation Error]', error);
+      return Response.json({ success: false, message: 'Failed to fetch location' }, { status: 500 });
+    }
+  }
+
+  /**
+   * PUT /api/user/location
+   * Saves or updates the user's current GPS location and address
+   */
+  static async saveLocation(req) {
+    try {
+      await dbConnect();
+      const { user: authUser, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      let body;
+      try {
+        body = await req.json();
+      } catch (err) {
+        return Response.json({ success: false, message: 'Invalid JSON body' }, { status: 400 });
+      }
+
+      const { latitude, longitude, accuracy, label, addressLine, area, city, district, state, pincode } = body;
+
+      // Basic Validation
+      if (latitude === undefined || longitude === undefined) {
+        return Response.json({ success: false, message: 'Latitude and Longitude are required' }, { status: 400 });
+      }
+
+      const locationData = {
+        latitude,
+        longitude,
+        accuracy,
+        label,
+        addressLine,
+        area,
+        city,
+        district,
+        state,
+        pincode
+      };
+
+      const savedLocation = await UserService.saveLocation(authUser.id, locationData);
+
+      return Response.json({
+        success: true,
+        message: 'Location saved successfully',
+        location: savedLocation
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[UserController.saveLocation Error]', error);
+      return Response.json({ success: false, message: 'Failed to save location' }, { status: 500 });
+    }
+  }
 }

@@ -166,4 +166,44 @@ export class StoreService {
       limit: Number(limit)
     };
   }
+
+  /**
+   * Nearby Discovery: Get nearby stores along with their top 3 deals
+   * @param {Object} options { latitude, longitude, radius, limit }
+   */
+  static async getNearbyDiscovery(options) {
+    const { latitude, longitude, radius = 10, limit = 10 } = options;
+    
+    // 1. Fetch nearby stores using existing search logic (without pagination for discovery)
+    const storeResult = await this.searchStores({
+      latitude,
+      longitude,
+      radius,
+      limit,
+      page: 1
+    });
+
+    const stores = storeResult.stores;
+
+    // 2. For each store, fetch top 3 active deals
+    // This is better done in a separate loop or a more complex aggregate if performance is critical.
+    // Given the small limit, a map with Promise.all is acceptable.
+    const storesWithDeals = await Promise.all(stores.map(async (store) => {
+      const deals = await Ads.find({ 
+        vendorId: store._id, 
+        status: 'approved' 
+      })
+      .sort({ createdAt: -1 })
+      .limit(3)
+      .select('_id title description imageUrl views')
+      .lean();
+
+      return {
+        ...store,
+        deals
+      };
+    }));
+
+    return storesWithDeals;
+  }
 }

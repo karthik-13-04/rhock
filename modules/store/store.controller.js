@@ -140,4 +140,50 @@ export class StoreController {
       }, { status: 500 });
     }
   }
+
+  /**
+   * GET /api/stores/nearby
+   * Nearby Discovery: Get stores and deals near a specific location
+   */
+  static async getNearby(req) {
+    try {
+      await dbConnect();
+
+      const { searchParams } = new URL(req.url);
+      const latitude = searchParams.get('lat') || searchParams.get('latitude');
+      const longitude = searchParams.get('lng') || searchParams.get('longitude');
+      const radius = parseFloat(searchParams.get('radius')) || 10;
+      const limit = parseInt(searchParams.get('limit')) || 10;
+
+      if (!latitude || !longitude) {
+        return Response.json({ 
+          success: false, 
+          message: 'Latitude and Longitude are required for nearby discovery' 
+        }, { status: 400 });
+      }
+
+      const lat = parseFloat(latitude);
+      const lng = parseFloat(longitude);
+
+      if (isNaN(lat) || isNaN(lng)) {
+        return Response.json({ success: false, message: 'Invalid coordinates' }, { status: 400 });
+      }
+
+      const result = await StoreService.getNearbyDiscovery({
+        latitude: lat,
+        longitude: lng,
+        radius,
+        limit
+      });
+
+      return Response.json({
+        success: true,
+        stores: result
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[StoreController.getNearby Error]', error);
+      return Response.json({ success: false, message: 'Failed to fetch nearby discovery' }, { status: 500 });
+    }
+  }
 }

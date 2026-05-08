@@ -37,6 +37,21 @@ const userSchema = new mongoose.Schema(
       trim: true,
     },
     
+    // Detailed Location (Dynamic GPS Save)
+    location: {
+      latitude: { type: Number },
+      longitude: { type: Number },
+      accuracy: { type: Number },
+      label: { type: String, trim: true },
+      addressLine: { type: String, trim: true },
+      area: { type: String, trim: true },
+      city: { type: String, trim: true },
+      district: { type: String, trim: true },
+      state: { type: String, trim: true },
+      pincode: { type: String, trim: true },
+      lastUpdated: { type: Date, default: Date.now }
+    },
+    
     // Contact (unique identifier)
     email: {
       type: String,
