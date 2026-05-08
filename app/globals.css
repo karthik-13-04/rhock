@@ -1,25 +1,25 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #F3F6FB;
+  --foreground: #1A1A2E;
   
   /* Admin Design System Tokens */
-  --admin-primary: #ff1a3c;
-  --admin-primary-soft: rgba(255, 26, 60, 0.1);
-  --admin-primary-glow: rgba(255, 26, 60, 0.43); /* #ff1a3c6e equivalent */
-  --admin-secondary: #FFE8EE; /* Soft pastel pink */
+  --admin-primary: #1A5CA8;
+  --admin-primary-soft: rgba(26, 92, 168, 0.1);
+  --admin-primary-glow: rgba(26, 92, 168, 0.43); 
+  --admin-secondary: #E8F1FF; /* Soft pastel blue */
 }
 
 @theme inline {
-  --color-background: #ffffff;
-  --color-foreground: #171717;
+  --color-background: #F3F6FB;
+  --color-foreground: #1A1A2E;
   
   /* Hardened Admin Design System Tokens */
-  --color-admin-primary: #ff1a3c;
-  --color-admin-primary-soft: rgba(255, 26, 60, 0.08); /* Slightly softer */
-  --color-admin-primary-glow: rgba(255, 26, 60, 0.43);
-  --color-admin-secondary: #FFE8EE;
+  --color-admin-primary: #1A5CA8;
+  --color-admin-primary-soft: rgba(26, 92, 168, 0.08); 
+  --color-admin-primary-glow: rgba(26, 92, 168, 0.43);
+  --color-admin-secondary: #E8F1FF;
   
   --radius-2xl: 1rem;
   --radius-3xl: 1.5rem;
@@ -42,7 +42,7 @@
   }
   
   .glass-card {
-    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_rgba(255,26,60,0.05)];
+    @apply bg-white/70 backdrop-blur-xl border border-white/40 shadow-[0_8px_32px_rgba(26,92,168,0.05)];
   }
 
   .glass-topbar {
@@ -50,7 +50,7 @@
   }
 
   .text-glow-primary {
-    text-shadow: 0 0 12px rgba(255, 26, 60, 0.3);
+    text-shadow: 0 0 12px rgba(26, 92, 168, 0.3);
   }
 
   .no-scrollbar::-webkit-scrollbar {

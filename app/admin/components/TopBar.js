@@ -31,7 +31,7 @@ export default function TopBar() {
            </button>
         )}
         <div className="flex flex-col">
-          <h2 className="text-2xl font-bold text-zinc-800 tracking-tight">Overview</h2>
+          <h2 className="text-2xl font-bold text-[#1A1A2E] tracking-tight">Overview</h2>
           <div className="flex items-center gap-2">
             <span className="text-[10px] font-black uppercase tracking-[0.2em] text-admin-primary/60">System</span>
             <div className="w-1 h-1 rounded-full bg-zinc-300" />
@@ -65,7 +65,7 @@ export default function TopBar() {
           {/* Profile Card */}
           <div className="flex items-center gap-4 pl-2 group cursor-pointer">
             <div className="flex flex-col items-end">
-              <p className="text-sm font-black text-zinc-800 tracking-tight group-hover:text-admin-primary transition-colors">
+              <p className="text-sm font-black text-[#1A1A2E] tracking-tight group-hover:text-admin-primary transition-colors">
                 {adminUser?.firstName || 'Admin'}
               </p>
               <p className="text-[9px] font-black uppercase tracking-widest text-zinc-400">

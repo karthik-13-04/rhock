@@ -69,7 +69,7 @@ export default function Sidebar() {
               <div className="w-10 h-10 rounded-2xl bg-admin-primary flex items-center justify-center shadow-lg shadow-admin-primary/30">
                 <span className="text-white font-bold text-xl">R</span>
               </div>
-              <span className="text-xl font-bold tracking-tight text-zinc-800">
+              <span className="text-xl font-bold tracking-tight text-[#1A1A2E]">
                 Rhock<span className="text-admin-primary underline decoration-2 underline-offset-4 decoration-admin-primary/30">Deal</span>
               </span>
             </motion.div>
@@ -109,7 +109,7 @@ export default function Sidebar() {
                 className={cn(
                   "flex items-center gap-4 px-4 py-4 rounded-2xl transition-all duration-300 relative group cursor-pointer",
                   isActive 
-                    ? "bg-admin-primary text-white shadow-[0_8px_20px_rgba(255,26,60,0.25)]" 
+                    ? "bg-admin-primary text-white shadow-[0_8px_20px_rgba(26,92,168,0.25)]" 
                     : "text-zinc-500 hover:text-admin-primary hover:bg-admin-primary-soft"
                 )}
               >

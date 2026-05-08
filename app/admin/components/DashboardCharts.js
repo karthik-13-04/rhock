@@ -64,7 +64,7 @@ export default function DashboardCharts() {
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Weekly Performance Analysis</p>
           </div>
           <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-admin-primary shadow-[0_0_10px_rgba(255,26,60,0.4)]" />
+            <div className="w-3 h-3 rounded-full bg-admin-primary shadow-[0_0_10px_rgba(26,92,168,0.4)]" />
             <span className="text-[10px] font-black uppercase text-zinc-500">Gross Sales</span>
           </div>
         </div>
@@ -74,8 +74,8 @@ export default function DashboardCharts() {
             <AreaChart data={data}>
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ff1a3c" stopOpacity={0.15}/>
-                  <stop offset="95%" stopColor="#ff1a3c" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#1A5CA8" stopOpacity={0.15}/>
+                  <stop offset="95%" stopColor="#1A5CA8" stopOpacity={0}/>
                 </linearGradient>
               </defs>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" />
@@ -93,11 +93,11 @@ export default function DashboardCharts() {
                 dx={-10}
               />
               <Tooltip 
-                cursor={{ stroke: '#ff1a3c', strokeWidth: 1, strokeDasharray: '4 4' }}
+                cursor={{ stroke: '#1A5CA8', strokeWidth: 1, strokeDasharray: '4 4' }}
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.9)', 
                   borderRadius: '24px', 
-                  border: '1px solid rgba(255,26,60,0.1)', 
+                  border: '1px solid rgba(26,92,168,0.1)', 
                   boxShadow: '0 20px 40px rgba(0,0,0,0.1)', 
                   backdropFilter: 'blur(12px)',
                   padding: '16px'
@@ -106,7 +106,7 @@ export default function DashboardCharts() {
               <Area 
                 type="monotone" 
                 dataKey="revenue" 
-                stroke="#ff1a3c" 
+                stroke="#1A5CA8" 
                 strokeWidth={4} 
                 fillOpacity={1} 
                 fill="url(#colorRevenue)" 
@@ -154,11 +154,11 @@ export default function DashboardCharts() {
                 dx={-10}
               />
               <Tooltip 
-                cursor={{fill: 'rgba(255, 26, 60, 0.05)', radius: [16, 16, 0, 0]}}
+                cursor={{fill: 'rgba(26, 92, 168, 0.05)', radius: [16, 16, 0, 0]}}
                 contentStyle={{ 
                   backgroundColor: 'rgba(255, 255, 255, 0.9)', 
                   borderRadius: '24px', 
-                  border: '1px solid rgba(255,26,60,0.1)', 
+                  border: '1px solid rgba(26,92,168,0.1)', 
                   boxShadow: '0 20px 40px rgba(0,0,0,0.1)', 
                   backdropFilter: 'blur(12px)',
                   padding: '16px'
@@ -166,7 +166,7 @@ export default function DashboardCharts() {
               />
               <Bar 
                 dataKey="users" 
-                fill="#ff1a3c" 
+                fill="#1A5CA8" 
                 radius={[12, 12, 0, 0]} 
                 barSize={32}
                 animationDuration={2000}
