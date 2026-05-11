@@ -1,5 +1,6 @@
 import Section from '@/models/section.model.js';
 import Ad from '@/models/ad.model.js';
+import Banner from '@/models/banner.model.js';
 import { dbConnect } from '@/config/database.js';
 
 export class SectionController {
@@ -35,25 +36,31 @@ export class SectionController {
         return Response.json({ success: false, message: 'Section not found' }, { status: 404 });
       }
 
-      const [ads, total] = await Promise.all([
+      const [banners, ads, total] = await Promise.all([
+        Banner.find({ section: section._id, isActive: true })
+          .sort({ order: 1 })
+          .lean(),
+
         Ad.find({ section: section._id, status: 'approved' })
           .populate('vendor', 'fullName storeName email')
-          .sort({ createdAt: -1 })
+          .sort({ isFeatured: -1, priority: -1, createdAt: -1 })
           .skip(skip)
           .limit(limit)
           .lean(),
-        Ad.countDocuments({ section: section._id, status: 'approved' })
+
+        Ad.countDocuments({ section: section._id, status: 'approved' }),
       ]);
 
       return Response.json({
         success: true,
         data: {
           section,
+          banners,   // promotional banners shown at the top of the section screen
           ads,
           total,
           page,
-          totalPages: Math.ceil(total / limit)
-        }
+          totalPages: Math.ceil(total / limit),
+        },
       }, { status: 200 });
     } catch (error) {
       return Response.json({ success: false, message: error.message }, { status: 500 });
