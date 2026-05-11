@@ -173,9 +173,10 @@ export default function CouponsPage() {
                     </div>
                     <input 
                       className="w-full px-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
-                      placeholder="Subtitle / Short Description" 
+                      placeholder="Subtitle / Short Description (Required)" 
                       value={form.subtitle} 
                       onChange={(e) => setForm({ ...form, subtitle: e.target.value })} 
+                      required
                     />
                     <div className="relative group">
                       <Ticket size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
@@ -234,9 +235,10 @@ export default function CouponsPage() {
                   <div className="space-y-4">
                     <input 
                       className="w-full px-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
-                      placeholder="Image URL / Asset Path" 
+                      placeholder="Image URL / Asset Path (Required)" 
                       value={form.imageUrl} 
                       onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
+                      required
                     />
                     <div className="relative group">
                       <ExternalLink size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />

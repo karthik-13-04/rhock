@@ -76,8 +76,11 @@ export async function POST(req) {
     };
   }
 
-  if (!payload.title) {
-    return Response.json({ success: false, message: 'Title is required' }, { status: 400 });
+  if (!payload.title || !payload.subtitle || !payload.imageUrl) {
+    return Response.json({ 
+      success: false, 
+      message: 'Title, Subtitle, and Image URL are mandatory for all coupons.' 
+    }, { status: 400 });
   }
 
   // Ensure coupon code is present for standard coupons to prevent app errors
