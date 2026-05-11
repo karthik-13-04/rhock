@@ -31,18 +31,21 @@ export class SectionController {
       const limit = parseInt(searchParams.get('limit')) || 20;
       const skip = (page - 1) * limit;
 
-      const section = await Section.findOne({ slug, isActive: true });
+      const section = await Section.findOne({ slug, isActive: true })
+        .select('_id name slug')
+        .lean();
       if (!section) {
         return Response.json({ success: false, message: 'Section not found' }, { status: 404 });
       }
 
       const [banners, ads, total] = await Promise.all([
         Banner.find({ section: section._id, isActive: true })
+          .select('_id section title image viewUrl whatsappLink storeLink order isActive')
           .sort({ order: 1 })
           .lean(),
 
         Ad.find({ section: section._id, status: 'approved' })
-          .populate('vendor', 'fullName storeName email')
+          .select('_id section title category images status')
           .sort({ isFeatured: -1, priority: -1, createdAt: -1 })
           .skip(skip)
           .limit(limit)
@@ -55,10 +58,13 @@ export class SectionController {
         success: true,
         data: {
           section,
-          banners,   // promotional banners shown at the top of the section screen
+          banners,
           ads,
+        },
+        pagination: {
           total,
           page,
+          limit,
           totalPages: Math.ceil(total / limit),
         },
       }, { status: 200 });
