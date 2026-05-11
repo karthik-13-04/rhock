@@ -327,9 +327,13 @@ export async function purchaseSubscription(userId, planId, paymentMethod = 'razo
     endDate = new Date(startDate.getTime() + plan.durationDays * 24 * 60 * 60 * 1000);
   }
 
+  // Find vendor profile
+  const vendor = await mongoose.models.Vendor.findOne({ userId });
+
   // Create subscription
   const subscriptionData = {
     user: userId,
+    vendor: vendor?._id || null,
     plan: plan._id,
     planSnapshot,
     paymentMethod,

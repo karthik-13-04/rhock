@@ -33,12 +33,31 @@ export class AdminService {
     }
 
     const total = await Vendor.countDocuments(query);
-    const vendors = await Vendor.find(query)
+    const rawVendors = await Vendor.find(query)
       .populate('userId', 'fullName email phone')
       .populate('categoryId', 'name')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
+
+    // Fetch active credits for each vendor
+    const vendors = await Promise.all(rawVendors.map(async (v) => {
+      const activeSub = await UserSubscription.findOne({
+        $or: [
+          { vendor: v._id },
+          { user: v.userId?._id || v.userId }
+        ],
+        status: { $in: ['active', 'trial'] },
+        endDate: { $gte: new Date() }
+      }).select('creditsRemaining creditsAllocated').sort({ createdAt: -1 }).lean();
+
+      return {
+        ...v,
+        creditsRemaining: activeSub?.creditsRemaining || 0,
+        creditsAllocated: activeSub?.creditsAllocated || 0
+      };
+    }));
 
     return {
       vendors,
@@ -96,21 +115,21 @@ export class AdminService {
       totalVendors,
       totalAds,
       pendingAds,
-      totalRevenueData,
+      revenueData,
       activeSubscriptions
     ] = await Promise.all([
       User.countDocuments({ role: 'user' }),
       Vendor.countDocuments({ status: 'active' }),
       Ad.countDocuments({ status: 'approved' }),
       Ad.countDocuments({ status: 'pending' }),
-      Payment.aggregate([
-        { $match: { status: 'paid' } },
-        { $group: { _id: null, total: { $sum: '$amount' } } }
+      UserSubscription.aggregate([
+        { $match: { paymentStatus: 'completed' } },
+        { $group: { _id: null, total: { $sum: '$finalAmount' } } }
       ]),
       UserSubscription.countDocuments({ status: 'active' })
     ]);
 
-    const totalRevenue = totalRevenueData.length > 0 ? totalRevenueData[0].total / 100 : 0; // Convert paise to INR
+    const totalRevenue = revenueData.length > 0 ? revenueData[0].total : 0;
 
     return {
       totalUsers,
@@ -162,13 +181,44 @@ export class AdminService {
     await dbConnect();
     const { page = 1, limit = 20 } = filters;
     
-    const total = await Payment.countDocuments();
-    const payments = await Payment.find()
-      .populate('vendorId', 'storeName fullName')
-      .populate('planId', 'name')
+    const total = await UserSubscription.countDocuments({ paymentStatus: 'completed' });
+    const rawSubscriptions = await UserSubscription.find({ paymentStatus: 'completed' })
+      .populate('user', 'fullName email phone')
+      .populate('vendor', 'storeName fullName email phone logo')
+      .populate('plan', 'name price durationDays creditsIncluded')
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
-      .limit(limit);
+      .limit(limit)
+      .lean();
+
+    // Map to the format expected by the frontend payments table
+    const payments = await Promise.all(rawSubscriptions.map(async (sub) => {
+      // If vendor field is missing, try to find vendor by user ID
+      let vendor = sub.vendor;
+      if (!vendor && sub.user) {
+        vendor = await Vendor.findOne({ userId: sub.user._id }).select('storeName fullName email phone logo').lean();
+      }
+
+      return {
+        _id: sub._id,
+        vendorId: vendor || {
+          fullName: sub.user?.fullName || 'Unknown User',
+          email: sub.user?.email,
+          phone: sub.user?.phone
+        },
+        planId: {
+          name: sub.planSnapshot?.name || sub.plan?.name,
+          price: sub.planSnapshot?.price || sub.plan?.price,
+          validityDays: sub.planSnapshot?.durationDays || sub.plan?.durationDays,
+          credits: sub.planSnapshot?.creditsIncluded || sub.plan?.creditsIncluded
+        },
+        razorpayOrderId: sub.razorpayOrderId,
+        razorpayPaymentId: sub.razorpayPaymentId,
+        amount: sub.finalAmount * 100, // Frontend expects paise
+        status: sub.paymentStatus === 'completed' ? 'paid' : sub.paymentStatus,
+        createdAt: sub.createdAt
+      };
+    }));
 
     return {
       payments,
