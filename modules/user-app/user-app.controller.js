@@ -67,50 +67,90 @@ export class UserAppController {
   }
 
   static async coupons() {
-    await dbConnect();
-    const { searchParams } = new URL(req.url);
-    const page = searchParams.get('page') || 1;
-    const limit = searchParams.get('limit') || 20;
-    const category = searchParams.get('category') || undefined;
-    const sortBy = searchParams.get('sortBy') || 'order';
-    const sortOrder = searchParams.get('sortOrder') || 'asc';
-    const activeParam = searchParams.get('isActive');
-    const isActive = activeParam === null ? true : activeParam === 'true';
+    try {
+      await dbConnect();
+      const { searchParams } = new URL(req.url);
+      const page = searchParams.get('page') || 1;
+      const limit = searchParams.get('limit') || 20;
+      const category = searchParams.get('category') || undefined;
+      const sortBy = searchParams.get('sortBy') || 'order';
+      const sortOrder = searchParams.get('sortOrder') || 'asc';
+      const activeParam = searchParams.get('isActive');
+      const isActive = activeParam === null ? true : activeParam === 'true';
 
-    const { items: data, pagination } = await UserAppService.listCoupons({
-      page,
-      limit,
-      category,
-      isActive,
-      sortBy,
-      sortOrder,
-    });
-    const items = data.map((c) => ({
-      id: c._id,
-      _id: c._id,
-      name: c.title,
-      title: c.title,
-      description: c.subtitle || '',
-      subtitle: c.subtitle || '',
-      category: c.category || '',
-      image: c.imageUrl || '',
-      couponCode: c.isCodeUserSpecific ? null : c.couponCode || '',
-      isActive: !!c.isActive,
-      sortOrder: c.order || 0,
-      expiryDate: c.expiryDate || null,
-      storeName: c.storeName || '',
-      terms: c.terms || '',
-      ctaLink: c.ctaLink || '',
-    }));
-    return Response.json({ success: true, data: items, pagination }, { status: 200 });
+      const { items: data, pagination } = await UserAppService.listCoupons({
+        page,
+        limit,
+        category,
+        isActive,
+        sortBy,
+        sortOrder,
+      });
+      const items = data.map((c) => {
+        let safeCtaLink = c.ctaLink || '';
+        if (safeCtaLink) {
+          try {
+            safeCtaLink = new URL(safeCtaLink).toString();
+          } catch {
+            safeCtaLink = '';
+          }
+        }
+
+        return {
+          id: c._id,
+          _id: c._id,
+          name: c.title,
+          title: c.title,
+          description: c.subtitle || '',
+          subtitle: c.subtitle || '',
+          category: c.category || '',
+          image: c.imageUrl || '',
+          imageUrl: c.imageUrl || '',
+          couponCode: c.isCodeUserSpecific ? null : c.couponCode || '',
+          isActive: !!c.isActive,
+          sortOrder: c.order || 0,
+          order: c.order || 0,
+          expiryDate: c.expiryDate ? new Date(c.expiryDate).toISOString() : null,
+          storeName: c.storeName || '',
+          terms: c.terms || '',
+          ctaLink: safeCtaLink,
+        };
+      });
+      return Response.json({
+        success: true,
+        data: {
+          coupons: items,
+          total: pagination.total,
+          page: pagination.page,
+          limit: pagination.limit,
+          totalPages: pagination.totalPages,
+        },
+      }, { status: 200 });
+    } catch (error) {
+      return Response.json({
+        success: true,
+        data: {
+          coupons: [],
+          total: 0,
+          page: 1,
+          limit: 20,
+          totalPages: 0,
+        },
+        message: 'Coupons unavailable, returned empty data.',
+      }, { status: 200 });
+    }
   }
 
   static async couponCode(req, { params }) {
-    await dbConnect();
-    const { id } = await params;
-    const coupon = await UserAppService.getCouponCode(id);
-    if (!coupon) return Response.json({ success: false, message: 'Coupon not found' }, { status: 404 });
-    return Response.json({ success: true, data: { id: coupon._id, couponCode: coupon.couponCode || '' } }, { status: 200 });
+    try {
+      await dbConnect();
+      const { id } = await params;
+      const coupon = await UserAppService.getCouponCode(id);
+      if (!coupon) return Response.json({ success: false, message: 'Coupon not found' }, { status: 404 });
+      return Response.json({ success: true, data: { id: coupon._id, couponCode: coupon.couponCode || '' } }, { status: 200 });
+    } catch {
+      return Response.json({ success: false, message: 'Coupon not found' }, { status: 404 });
+    }
   }
 
   static async saveAd(req) {

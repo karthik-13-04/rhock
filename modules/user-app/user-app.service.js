@@ -5,6 +5,7 @@ import Coupon from '@/models/coupon.model.js';
 import Section from '@/models/section.model.js';
 import User from '@/models/user.model.js';
 import '@/models/vendor.model.js';
+import mongoose from 'mongoose';
 
 function num(v, fallback = 999999) {
   return Number.isFinite(v) ? v : fallback;
@@ -169,6 +170,7 @@ export class UserAppService {
   }
 
   static async getCouponCode(id) {
+    if (!mongoose.Types.ObjectId.isValid(id)) return null;
     return Coupon.findOne({ _id: id, isActive: true }).lean();
   }
 
