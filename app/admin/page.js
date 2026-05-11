@@ -77,7 +77,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* 2. Main Stat Widgets (Client Component) */}
-      <DashboardStats stats={dashboardStats || {}} />
+      <DashboardStats stats={dashboardStats?.data || {}} />
 
       {/* 3. Analytics & System Security Grid */}
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">

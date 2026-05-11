@@ -141,8 +141,31 @@ export class UserAppService {
     return Category.find({ isActive: true }).sort({ name: 1 }).select('_id name iconUrl imageUrl isActive').lean();
   }
 
-  static async listCoupons() {
-    return Coupon.find({ isActive: true }).sort({ order: 1 }).lean();
+  static async listCoupons({ page = 1, limit = 20, category, isActive = true, sortBy = 'order', sortOrder = 'asc' }) {
+    const query = {};
+    if (typeof isActive === 'boolean') query.isActive = isActive;
+    if (category) query.category = category;
+
+    const safePage = Math.max(1, Number(page) || 1);
+    const safeLimit = Math.min(100, Math.max(1, Number(limit) || 20));
+    const skip = (safePage - 1) * safeLimit;
+    const direction = String(sortOrder).toLowerCase() === 'desc' ? -1 : 1;
+    const safeSortBy = ['order', 'createdAt', 'title', 'expiryDate'].includes(sortBy) ? sortBy : 'order';
+
+    const [items, total] = await Promise.all([
+      Coupon.find(query).sort({ [safeSortBy]: direction, createdAt: -1 }).skip(skip).limit(safeLimit).lean(),
+      Coupon.countDocuments(query),
+    ]);
+
+    return {
+      items,
+      pagination: {
+        total,
+        page: safePage,
+        limit: safeLimit,
+        totalPages: Math.ceil(total / safeLimit),
+      },
+    };
   }
 
   static async getCouponCode(id) {

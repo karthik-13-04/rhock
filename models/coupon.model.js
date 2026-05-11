@@ -6,10 +6,14 @@ const couponSchema = new mongoose.Schema(
     subtitle: { type: String, trim: true, maxlength: 250 },
     category: { type: String, trim: true, index: true },
     imageUrl: { type: String, trim: true },
+    storeName: { type: String, trim: true },
+    terms: { type: String, trim: true, maxlength: 2000 },
+    ctaLink: { type: String, trim: true },
     couponCode: { type: String, trim: true },
     isCodeUserSpecific: { type: Boolean, default: false },
     isActive: { type: Boolean, default: true, index: true },
     order: { type: Number, default: 0 },
+    expiryDate: { type: Date },
   },
   { timestamps: true }
 );

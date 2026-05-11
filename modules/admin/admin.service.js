@@ -113,10 +113,11 @@ export class AdminService {
     const [
       totalUsers,
       totalVendors,
-      totalAds,
+      activeAds,
       pendingAds,
       revenueData,
-      activeSubscriptions
+      activeSubscriptions,
+      coinData
     ] = await Promise.all([
       User.countDocuments({ role: 'user' }),
       Vendor.countDocuments({ status: 'active' }),
@@ -126,19 +127,91 @@ export class AdminService {
         { $match: { paymentStatus: 'completed' } },
         { $group: { _id: null, total: { $sum: '$finalAmount' } } }
       ]),
-      UserSubscription.countDocuments({ status: 'active' })
+      UserSubscription.countDocuments({ status: 'active' }),
+      Vendor.aggregate([
+        { $group: { _id: null, total: { $sum: '$coinBalance' } } }
+      ])
     ]);
 
     const totalRevenue = revenueData.length > 0 ? revenueData[0].total : 0;
+    const totalCoins = coinData.length > 0 ? coinData[0].total : 0;
 
     return {
       totalUsers,
       totalVendors,
-      totalAds,
+      activeAds,
       pendingAds,
       totalRevenue,
+      totalCoins,
       activeSubscriptions
     };
+  }
+
+  /**
+   * Get Analytics trends for charts (Last 7 days)
+   */
+  static async getAnalytics() {
+    await dbConnect();
+    
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+
+    // 1. Revenue Trends
+    const revenueTrends = await UserSubscription.aggregate([
+      { 
+        $match: { 
+          paymentStatus: 'completed',
+          createdAt: { $gte: sevenDaysAgo }
+        } 
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          revenue: { $sum: "$finalAmount" }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // 2. User Growth Trends
+    const userTrends = await User.aggregate([
+      { 
+        $match: { 
+          role: 'user',
+          createdAt: { $gte: sevenDaysAgo }
+        } 
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          users: { $sum: 1 }
+        }
+      },
+      { $sort: { _id: 1 } }
+    ]);
+
+    // Format for frontend (merge by date)
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const results = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      const dateStr = d.toISOString().split('T')[0];
+      const dayName = days[d.getDay()];
+      
+      const revEntry = revenueTrends.find(r => r._id === dateStr);
+      const userEntry = userTrends.find(u => u._id === dateStr);
+      
+      results.push({
+        name: dayName,
+        date: dateStr,
+        revenue: revEntry ? revEntry.revenue : 0,
+        users: userEntry ? userEntry.users : 0
+      });
+    }
+
+    return results;
   }
 
   /**

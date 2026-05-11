@@ -497,8 +497,8 @@ export default function SectionsDashboard() {
                </div>
                <form onSubmit={handleTagSubmit} className="p-8 space-y-6">
                   <div className="flex gap-6">
-                     <div onClick={() => document.getElementById('tag-img').click()} className="w-32 h-32 rounded-[32px] bg-zinc-50 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden group">
-                        {tagImagePreview ? <img src={tagImagePreview} className="w-full h-full object-cover" /> : <><ImageIcon className="text-zinc-300 group-hover:text-admin-primary transition-colors" /><span className="text-[10px] font-black uppercase text-zinc-400 mt-2">Icon</span></>}
+                     <div onClick={() => document.getElementById('tag-img').click()} className="w-32 h-32 rounded-[32px] bg-zinc-50 dark:bg-zinc-800 border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden group">
+                        {tagImagePreview ? <img src={tagImagePreview} className="w-full h-full object-cover" /> : <><ImageIcon className="text-zinc-300 dark:text-zinc-600 group-hover:text-admin-primary transition-colors" /><span className="text-[10px] font-black uppercase text-zinc-400 dark:text-zinc-500 mt-2">Icon</span></>}
                         <input id="tag-img" type="file" hidden onChange={e => {
                            const file = e.target.files[0];
                            if(file) { setTagImage(file); setTagImagePreview(URL.createObjectURL(file)); }
@@ -507,11 +507,11 @@ export default function SectionsDashboard() {
                      <div className="flex-1 space-y-4">
                         <div>
                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">Tag Name</label>
-                           <input required value={tagForm.name} onChange={e => setTagForm({...tagForm, name: e.target.value})} className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none focus:ring-2 ring-admin-primary/20 font-bold" />
+                           <input required value={tagForm.name} onChange={e => setTagForm({...tagForm, name: e.target.value})} className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none focus:ring-2 ring-admin-primary/20 font-bold text-zinc-900 dark:text-white" />
                         </div>
                         <div>
                            <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">Display Order</label>
-                           <input type="number" value={tagForm.order} onChange={e => setTagForm({...tagForm, order: e.target.value})} className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none font-bold" />
+                           <input type="number" value={tagForm.order} onChange={e => setTagForm({...tagForm, order: e.target.value})} className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none font-bold text-zinc-900 dark:text-white" />
                         </div>
                      </div>
                   </div>
@@ -533,8 +533,8 @@ export default function SectionsDashboard() {
                   <button onClick={() => setIsBannerModalOpen(false)} className="p-2 hover:bg-zinc-100 rounded-xl"><X /></button>
                </div>
                <form onSubmit={handleBannerSubmit} className="p-8 space-y-4 max-h-[70vh] overflow-y-auto no-scrollbar">
-                  <div onClick={() => document.getElementById('ban-img').click()} className="aspect-[21/9] w-full rounded-[32px] bg-zinc-50 border-2 border-dashed flex flex-col items-center justify-center cursor-pointer overflow-hidden group">
-                     {bannerImagePreview ? <img src={bannerImagePreview} className="w-full h-full object-cover" /> : <><Upload className="text-zinc-300 group-hover:text-admin-primary transition-colors" /><span className="text-xs font-black uppercase text-zinc-400 mt-2">Upload Banner Image</span></>}
+                  <div onClick={() => document.getElementById('ban-img').click()} className="aspect-[21/9] w-full rounded-[32px] bg-zinc-50 dark:bg-zinc-800 border-2 border-dashed border-zinc-200 dark:border-zinc-700 flex flex-col items-center justify-center cursor-pointer overflow-hidden group">
+                     {bannerImagePreview ? <img src={bannerImagePreview} className="w-full h-full object-cover" /> : <><Upload className="text-zinc-300 dark:text-zinc-600 group-hover:text-admin-primary transition-colors" /><span className="text-xs font-black uppercase text-zinc-400 dark:text-zinc-500 mt-2">Upload Banner Image</span></>}
                      <input id="ban-img" type="file" hidden onChange={e => {
                         const file = e.target.files[0];
                         if(file) { setBannerImage(file); setBannerImagePreview(URL.createObjectURL(file)); }
@@ -544,30 +544,30 @@ export default function SectionsDashboard() {
                   <div className="grid grid-cols-2 gap-4">
                      <div>
                         <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">Category Tag</label>
-                        <select value={bannerForm.section} onChange={e => setBannerForm({...bannerForm, section: e.target.value})} className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none font-bold">
+                        <select value={bannerForm.section} onChange={e => setBannerForm({...bannerForm, section: e.target.value})} className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none font-bold text-zinc-900 dark:text-white">
                            {sections.map(s => <option key={s._id} value={s._id}>{s.name}</option>)}
                         </select>
                      </div>
                      <div>
                         <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">Location</label>
-                        <input value={bannerForm.location} onChange={e => setBannerForm({...bannerForm, location: e.target.value})} placeholder="City or Store Area" className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none font-bold" />
+                        <input value={bannerForm.location} onChange={e => setBannerForm({...bannerForm, location: e.target.value})} placeholder="City or Store Area" className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none font-bold text-zinc-900 dark:text-white" />
                      </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                      <div>
                         <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">View/Redirect URL</label>
-                        <input value={bannerForm.viewUrl} onChange={e => setBannerForm({...bannerForm, viewUrl: e.target.value})} placeholder="https://..." className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none font-bold" />
+                        <input value={bannerForm.viewUrl} onChange={e => setBannerForm({...bannerForm, viewUrl: e.target.value})} placeholder="https://..." className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none font-bold text-zinc-900 dark:text-white" />
                      </div>
                      <div>
                         <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">WhatsApp Number</label>
-                        <input value={bannerForm.whatsappLink} onChange={e => setBannerForm({...bannerForm, whatsappLink: e.target.value})} placeholder="+91..." className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none font-bold" />
+                        <input value={bannerForm.whatsappLink} onChange={e => setBannerForm({...bannerForm, whatsappLink: e.target.value})} placeholder="+91..." className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none font-bold text-zinc-900 dark:text-white" />
                      </div>
                   </div>
 
                   <div>
                      <label className="text-[10px] font-black uppercase text-zinc-400 mb-2 block">Store Profile Link</label>
-                     <input value={bannerForm.storeLink} onChange={e => setBannerForm({...bannerForm, storeLink: e.target.value})} placeholder="Deep link or slug" className="w-full px-6 py-3 bg-zinc-50 rounded-2xl outline-none font-bold" />
+                     <input value={bannerForm.storeLink} onChange={e => setBannerForm({...bannerForm, storeLink: e.target.value})} placeholder="Deep link or slug" className="w-full px-6 py-3 bg-zinc-50 dark:bg-zinc-800 border border-transparent dark:border-zinc-700 rounded-2xl outline-none font-bold text-zinc-900 dark:text-white" />
                   </div>
 
                   <button type="submit" className="w-full py-4 bg-admin-primary text-white font-black rounded-[24px] shadow-lg shadow-admin-primary/20 mt-4">Save Promotional Banner</button>

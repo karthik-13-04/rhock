@@ -154,7 +154,7 @@ export default function CategoriesPage() {
               placeholder="Search categories..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-12 pr-6 py-4 bg-white border border-zinc-200 rounded-2xl text-sm font-bold focus:ring-4 ring-admin-primary/10 outline-none transition-all"
+              className="w-full pl-12 pr-6 py-4 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:ring-4 ring-admin-primary/10 outline-none transition-all"
             />
           </div>
           <button 
@@ -275,7 +275,7 @@ export default function CategoriesPage() {
                       value={formData.name}
                       onChange={(e) => setFormData(prev => ({ ...prev, name: e.target.value }))}
                       placeholder="e.g. Premium Electronics"
-                      className="w-full px-6 py-4 bg-zinc-50 border-none rounded-2xl text-sm font-bold focus:ring-4 ring-admin-primary/10 outline-none transition-all"
+                      className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-none rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:ring-4 ring-admin-primary/10 outline-none transition-all"
                     />
                   </div>
 

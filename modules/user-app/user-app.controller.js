@@ -68,17 +68,41 @@ export class UserAppController {
 
   static async coupons() {
     await dbConnect();
-    const data = await UserAppService.listCoupons();
+    const { searchParams } = new URL(req.url);
+    const page = searchParams.get('page') || 1;
+    const limit = searchParams.get('limit') || 20;
+    const category = searchParams.get('category') || undefined;
+    const sortBy = searchParams.get('sortBy') || 'order';
+    const sortOrder = searchParams.get('sortOrder') || 'asc';
+    const activeParam = searchParams.get('isActive');
+    const isActive = activeParam === null ? true : activeParam === 'true';
+
+    const { items: data, pagination } = await UserAppService.listCoupons({
+      page,
+      limit,
+      category,
+      isActive,
+      sortBy,
+      sortOrder,
+    });
     const items = data.map((c) => ({
       id: c._id,
+      _id: c._id,
+      name: c.title,
       title: c.title,
+      description: c.subtitle || '',
       subtitle: c.subtitle || '',
       category: c.category || '',
       image: c.imageUrl || '',
       couponCode: c.isCodeUserSpecific ? null : c.couponCode || '',
       isActive: !!c.isActive,
+      sortOrder: c.order || 0,
+      expiryDate: c.expiryDate || null,
+      storeName: c.storeName || '',
+      terms: c.terms || '',
+      ctaLink: c.ctaLink || '',
     }));
-    return Response.json({ success: true, data: items }, { status: 200 });
+    return Response.json({ success: true, data: items, pagination }, { status: 200 });
   }
 
   static async couponCode(req, { params }) {

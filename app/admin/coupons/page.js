@@ -164,7 +164,7 @@ export default function CouponsPage() {
                     <div className="relative group">
                       <Tag size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
                       <input 
-                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         placeholder="Coupon Title (e.g. 50% OFF)" 
                         value={form.title} 
                         onChange={(e) => setForm({ ...form, title: e.target.value })} 
@@ -172,7 +172,7 @@ export default function CouponsPage() {
                       />
                     </div>
                     <input 
-                      className="w-full px-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                      className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                       placeholder="Subtitle / Short Description (Required)" 
                       value={form.subtitle} 
                       onChange={(e) => setForm({ ...form, subtitle: e.target.value })} 
@@ -181,7 +181,7 @@ export default function CouponsPage() {
                     <div className="relative group">
                       <Ticket size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
                       <input 
-                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         placeholder="CRITICAL: Coupon Code" 
                         value={form.couponCode} 
                         onChange={(e) => setForm({ ...form, couponCode: e.target.value })} 
@@ -200,7 +200,7 @@ export default function CouponsPage() {
                     <div className="relative group">
                       <Layers size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
                       <input 
-                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         placeholder="Category (e.g. Fashion)" 
                         value={form.category} 
                         onChange={(e) => setForm({ ...form, category: e.target.value })} 
@@ -209,7 +209,7 @@ export default function CouponsPage() {
                     <div className="relative group">
                       <Store size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
                       <input 
-                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         placeholder="Affiliated Store Name" 
                         value={form.storeName} 
                         onChange={(e) => setForm({ ...form, storeName: e.target.value })} 
@@ -218,7 +218,7 @@ export default function CouponsPage() {
                     <div className="relative group">
                       <Calendar size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
                       <input 
-                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         type="date" 
                         value={form.expiryDate} 
                         onChange={(e) => setForm({ ...form, expiryDate: e.target.value })} 
@@ -234,7 +234,7 @@ export default function CouponsPage() {
                   </h4>
                   <div className="space-y-4">
                     <input 
-                      className="w-full px-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                      className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                       placeholder="Image URL / Asset Path (Required)" 
                       value={form.imageUrl} 
                       onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
@@ -243,7 +243,7 @@ export default function CouponsPage() {
                     <div className="relative group">
                       <ExternalLink size={18} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-admin-primary transition-colors" />
                       <input 
-                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 border-2 border-transparent rounded-2xl text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all" 
+                        className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         placeholder="CTA / Store Redirect Link" 
                         value={form.ctaLink} 
                         onChange={(e) => setForm({ ...form, ctaLink: e.target.value })} 
@@ -272,7 +272,7 @@ export default function CouponsPage() {
 
                 <div className="md:col-span-2 lg:col-span-3">
                    <textarea 
-                    className="w-full px-6 py-4 bg-zinc-50 border-2 border-transparent rounded-[32px] text-sm font-bold focus:border-admin-primary/20 focus:bg-white outline-none transition-all min-h-[120px]" 
+                    className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-[32px] text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all min-h-[120px]" 
                     placeholder="Terms & Conditions (Policy DNA)" 
                     value={form.terms} 
                     onChange={(e) => setForm({ ...form, terms: e.target.value })} 

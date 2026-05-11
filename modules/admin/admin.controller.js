@@ -299,4 +299,17 @@ export class AdminController {
       return Response.json({ success: false, message: error.message }, { status: 500 });
     }
   }
+
+  /**
+   * Get Dashboard Analytics
+   * GET /api/admin/dashboard/analytics
+   */
+  static async getAnalytics(req) {
+    try {
+      const data = await AdminService.getAnalytics();
+      return Response.json({ success: true, data }, { status: 200 });
+    } catch (error) {
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
 }

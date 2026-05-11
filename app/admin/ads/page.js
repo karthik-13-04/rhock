@@ -161,7 +161,7 @@ export default function AdsPage() {
               placeholder="Search ads..." 
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm focus:ring-2 ring-blue-500 outline-none"
+              className="w-full pl-9 pr-4 py-2 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded-xl text-sm text-zinc-900 dark:text-white focus:ring-2 ring-blue-500 outline-none"
             />
           </div>
           <button 
@@ -407,7 +407,7 @@ export default function AdsPage() {
                   value={formData.title}
                   onChange={e => setFormData({...formData, title: e.target.value})}
                   placeholder="e.g. 50% Off Summer Sale"
-                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                 />
               </div>
 
@@ -419,7 +419,7 @@ export default function AdsPage() {
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   placeholder="Tell customers about this offer..."
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all resize-none"
+                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all resize-none text-zinc-900 dark:text-white"
                 />
               </div>
 
@@ -430,7 +430,7 @@ export default function AdsPage() {
                   value={formData.url}
                   onChange={e => setFormData({...formData, url: e.target.value})}
                   placeholder="https://example.com"
-                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                 />
               </div>
 
@@ -486,7 +486,7 @@ export default function AdsPage() {
                 <select 
                   value={selectedSection}
                   onChange={e => setSelectedSection(e.target.value)}
-                  className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl outline-none focus:ring-2 ring-admin-primary/20 focus:border-admin-primary transition-all font-bold"
+                  className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl outline-none focus:ring-2 ring-admin-primary/20 focus:border-admin-primary transition-all font-bold text-zinc-900 dark:text-white"
                 >
                   <option value="">No Section (Standard Listing)</option>
                   {sections.map(section => (
@@ -505,7 +505,7 @@ export default function AdsPage() {
                   onChange={e => setReviewNotes(e.target.value)}
                   placeholder="e.g. Content looks good, high quality images."
                   rows={2}
-                  className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl outline-none focus:ring-2 ring-admin-primary/20 focus:border-admin-primary transition-all font-bold resize-none"
+                  className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-2xl outline-none focus:ring-2 ring-admin-primary/20 focus:border-admin-primary transition-all font-bold resize-none text-zinc-900 dark:text-white"
                 />
               </div>
 

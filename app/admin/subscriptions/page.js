@@ -212,7 +212,7 @@ export default function SubscriptionsPage() {
                   value={formData.name}
                   onChange={e => setFormData({...formData, name: e.target.value})}
                   placeholder="e.g. Near Business Pro"
-                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                 />
               </div>
 
@@ -224,7 +224,7 @@ export default function SubscriptionsPage() {
                   onChange={e => setFormData({...formData, description: e.target.value})}
                   placeholder="What's included in this plan?"
                   rows={2}
-                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all resize-none"
+                  className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all resize-none text-zinc-900 dark:text-white"
                 />
               </div>
 
@@ -237,7 +237,7 @@ export default function SubscriptionsPage() {
                     value={formData.price}
                     onChange={e => setFormData({...formData, price: e.target.value})}
                     placeholder="4999"
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                   />
                 </div>
                 <div>
@@ -248,7 +248,7 @@ export default function SubscriptionsPage() {
                     value={formData.creditsIncluded}
                     onChange={e => setFormData({...formData, creditsIncluded: e.target.value})}
                     placeholder="20"
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                   />
                 </div>
               </div>
@@ -259,7 +259,7 @@ export default function SubscriptionsPage() {
                   <select 
                     value={formData.billingCycle}
                     onChange={e => setFormData({...formData, billingCycle: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                   >
                     <option value="monthly">Monthly</option>
                     <option value="quarterly">Quarterly</option>
@@ -273,7 +273,7 @@ export default function SubscriptionsPage() {
                   <select 
                     value={formData.badge}
                     onChange={e => setFormData({...formData, badge: e.target.value})}
-                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all"
+                    className="w-full px-4 py-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-xl outline-none focus:ring-2 ring-blue-500 transition-all text-zinc-900 dark:text-white"
                   >
                     <option value="">None</option>
                     <option value="popular">Popular</option>

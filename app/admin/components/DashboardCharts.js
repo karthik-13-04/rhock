@@ -13,40 +13,60 @@ import {
   Bar 
 } from 'recharts';
 import { motion } from 'framer-motion';
-
-/**
- * Mock data for the analytical charts
- * In a real production app, this would be fetched from an analytics API
- */
-const data = [
-  { name: 'Mon', revenue: 4200, users: 45 },
-  { name: 'Tue', revenue: 5100, users: 52 },
-  { name: 'Wed', revenue: 3800, users: 38 },
-  { name: 'Thu', revenue: 6200, users: 85 },
-  { name: 'Fri', revenue: 7800, users: 92 },
-  { name: 'Sat', revenue: 5600, users: 66 },
-  { name: 'Sun', revenue: 8400, users: 110 },
-];
+import { useAdminStore } from "../../../store/useAdminStore";
+import { dashboardService } from "../../../services/admin/dashboard.service";
+import { Loader2, TrendingUp, Activity } from "lucide-react";
 
 /**
  * Dashboard Analytical Charts
- * Visualizes business growth and user engagement
+ * Visualizes business growth and user engagement with real-time data.
  */
 export default function DashboardCharts() {
+  const { analyticsData, setAnalyticsData } = useAdminStore();
+  const [loading, setLoading] = useState(false);
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
     setMounted(true);
+    const fetchAnalytics = async () => {
+      if (analyticsData.length > 0) return;
+      try {
+        setLoading(true);
+        const res = await dashboardService.getAnalytics();
+        if (res.success) {
+          setAnalyticsData(res.data);
+        }
+      } catch (error) {
+        console.error("Failed to load analytics:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAnalytics();
   }, []);
 
-  if (!mounted) {
+  if (!mounted || loading) {
     return (
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 my-10">
-        <div className="h-[450px] bg-zinc-50 animate-pulse rounded-[40px]" />
-        <div className="h-[450px] bg-zinc-50 animate-pulse rounded-[40px]" />
+        <div className="h-[450px] bg-zinc-50/50 animate-pulse rounded-[40px] flex items-center justify-center border border-zinc-100">
+           <Loader2 className="w-8 h-8 text-zinc-200 animate-spin" />
+        </div>
+        <div className="h-[450px] bg-zinc-50/50 animate-pulse rounded-[40px] flex items-center justify-center border border-zinc-100">
+           <Loader2 className="w-8 h-8 text-zinc-200 animate-spin" />
+        </div>
       </div>
     );
   }
+
+  const chartData = analyticsData.length > 0 ? analyticsData : [
+    { name: 'Mon', revenue: 0, users: 0 },
+    { name: 'Tue', revenue: 0, users: 0 },
+    { name: 'Wed', revenue: 0, users: 0 },
+    { name: 'Thu', revenue: 0, users: 0 },
+    { name: 'Fri', revenue: 0, users: 0 },
+    { name: 'Sat', revenue: 0, users: 0 },
+    { name: 'Sun', revenue: 0, users: 0 },
+  ];
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 my-10">
@@ -56,11 +76,16 @@ export default function DashboardCharts() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: 0.2, duration: 0.6 }}
-        className="glass-card rounded-[40px] p-10 relative group border-white/50"
+        className="glass-card rounded-[40px] p-10 relative group border-white/50 bg-white shadow-xl shadow-zinc-100/40"
       >
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h3 className="text-xl font-black text-zinc-900 tracking-tight">Revenue Trends</h3>
+            <div className="flex items-center gap-3 mb-1">
+               <div className="p-2 bg-admin-primary/10 rounded-xl text-admin-primary">
+                  <TrendingUp size={14} />
+               </div>
+               <h3 className="text-xl font-black text-zinc-900 tracking-tight">Revenue Trends</h3>
+            </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">Weekly Performance Analysis</p>
           </div>
           <div className="flex items-center gap-2">
@@ -71,7 +96,7 @@ export default function DashboardCharts() {
 
         <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <AreaChart data={data}>
+            <AreaChart data={chartData}>
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#1A5CA8" stopOpacity={0.15}/>
@@ -123,22 +148,26 @@ export default function DashboardCharts() {
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
         transition={{ delay: 0.4, duration: 0.6 }}
-        className="glass-card rounded-[40px] p-10 relative group border-white/50"
+        className="glass-card rounded-[40px] p-10 relative group border-white/50 bg-white shadow-xl shadow-zinc-100/40"
       >
         <div className="flex items-center justify-between mb-10">
           <div>
-            <h3 className="text-xl font-black text-zinc-900 tracking-tight">Active Reach</h3>
+            <div className="flex items-center gap-3 mb-1">
+               <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
+                  <Activity size={14} />
+               </div>
+               <h3 className="text-xl font-black text-zinc-900 tracking-tight">Active Reach</h3>
+            </div>
             <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mt-1">User Acquisition Funnel</p>
           </div>
-          <select className="text-[10px] font-black uppercase text-admin-primary bg-admin-primary-soft px-4 py-2 rounded-xl outline-none cursor-pointer hover:bg-admin-primary hover:text-white transition-all">
-            <option>Last 7 Days</option>
-            <option>Last 30 Days</option>
-          </select>
+          <div className="text-[10px] font-black uppercase text-admin-primary bg-admin-primary/5 px-4 py-2 rounded-xl">
+            Last 7 Days
+          </div>
         </div>
 
         <div className="h-[320px] w-full">
           <ResponsiveContainer width="100%" height="100%" minWidth={0}>
-            <BarChart data={data}>
+            <BarChart data={chartData}>
               <CartesianGrid vertical={false} strokeDasharray="3 3" stroke="rgba(0,0,0,0.03)" />
               <XAxis 
                 dataKey="name" 
