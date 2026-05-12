@@ -66,7 +66,7 @@ export class UserAppController {
     return Response.json({ success: true, categories }, { status: 200 });
   }
 
-  static async coupons() {
+  static async coupons(req) {
     try {
       await dbConnect();
       const { searchParams } = new URL(req.url);
