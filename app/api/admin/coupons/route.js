@@ -91,6 +91,10 @@ export async function POST(req) {
     }, { status: 400 });
   }
 
+  if (payload.couponCode) {
+    payload.couponCode = payload.couponCode.toUpperCase().replace(/[^A-Z0-9]/g, '');
+  }
+
   const created = await Coupon.create(payload);
   return Response.json({ success: true, data: created }, { status: 201 });
 }

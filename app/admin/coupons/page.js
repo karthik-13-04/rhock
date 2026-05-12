@@ -38,6 +38,7 @@ export default function CouponsPage() {
     subtitle: '',
     category: '',
     imageUrl: '',
+    imageFile: null,
     couponCode: '',
     isActive: true,
     order: 0,
@@ -67,12 +68,31 @@ export default function CouponsPage() {
     e.preventDefault();
     setLoading(true);
     try {
-      await couponService.create(form);
+      let payload;
+      if (form.imageFile) {
+        payload = new FormData();
+        payload.append('title', form.title);
+        payload.append('subtitle', form.subtitle);
+        if (form.category) payload.append('category', form.category);
+        payload.append('image', form.imageFile);
+        if (form.couponCode) payload.append('couponCode', form.couponCode);
+        payload.append('isActive', form.isActive);
+        payload.append('order', form.order);
+        if (form.storeName) payload.append('storeName', form.storeName);
+        if (form.terms) payload.append('terms', form.terms);
+        if (form.ctaLink) payload.append('ctaLink', form.ctaLink);
+        if (form.expiryDate) payload.append('expiryDate', form.expiryDate);
+      } else {
+        payload = form;
+      }
+      
+      await couponService.create(payload);
       setForm({
         title: '',
         subtitle: '',
         category: '',
         imageUrl: '',
+        imageFile: null,
         couponCode: '',
         isActive: true,
         order: 0,
@@ -184,7 +204,7 @@ export default function CouponsPage() {
                         className="w-full pl-14 pr-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
                         placeholder="CRITICAL: Coupon Code" 
                         value={form.couponCode} 
-                        onChange={(e) => setForm({ ...form, couponCode: e.target.value })} 
+                        onChange={(e) => setForm({ ...form, couponCode: e.target.value.toUpperCase().replace(/[^A-Z0-9]/g, '') })} 
                         required
                       />
                     </div>
@@ -234,10 +254,10 @@ export default function CouponsPage() {
                   </h4>
                   <div className="space-y-4">
                     <input 
-                      className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all" 
-                      placeholder="Image URL / Asset Path (Required)" 
-                      value={form.imageUrl} 
-                      onChange={(e) => setForm({ ...form, imageUrl: e.target.value })} 
+                      type="file"
+                      accept="image/*"
+                      className="w-full px-6 py-4 bg-zinc-50 dark:bg-zinc-800 border-2 border-transparent dark:border-zinc-700 rounded-2xl text-sm font-bold text-zinc-900 dark:text-white focus:border-admin-primary/20 focus:bg-white dark:focus:bg-zinc-700 outline-none transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-bold file:bg-admin-primary/10 file:text-admin-primary hover:file:bg-admin-primary/20" 
+                      onChange={(e) => setForm({ ...form, imageFile: e.target.files[0] })} 
                       required
                     />
                     <div className="relative group">
