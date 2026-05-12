@@ -5,7 +5,12 @@ import { dbConnect } from '../../config/database.js';
 import { S3Service } from '../../services/s3.service.js';
 import { FileValidator } from '../../utils/fileValidator.js';
 import { generateToken } from '../../utils/jwt.js';
-import { getPlans, getPlan, purchaseSubscription, verifyPayment } from '../../services/subscription.service.js';
+import { 
+  getPlans, 
+  getPlan, 
+  purchaseSubscription as purchaseSubscriptionService, 
+  verifyPayment as verifyPaymentService 
+} from '../../services/subscription.service.js';
 import { 
   createAd as createAdService, 
   listAds as listAdsService, 
@@ -927,7 +932,7 @@ export class VendorController {
       const order = await razorpayService.createOrder(amountInPaise, 'INR');
 
       // 5. Initialize Subscription (pending state)
-      const result = await purchaseSubscription(user.id, planId, 'razorpay', {
+      const result = await purchaseSubscriptionService(user.id, planId, 'razorpay', {
         razorpayOrderId: order.id,
         amount: plan.price
       });
@@ -977,7 +982,7 @@ export class VendorController {
       }
 
       // 4. Activate Subscription
-      const subscription = await verifyPayment(subscriptionId, {
+      const subscription = await verifyPaymentService(subscriptionId, {
         razorpay_order_id,
         razorpay_payment_id,
         razorpay_signature

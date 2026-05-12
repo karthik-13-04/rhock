@@ -1,6 +1,7 @@
 import SubscriptionPlan from '../models/subscriptionPlan.model.js';
 import UserSubscription from '../models/userSubscription.model.js';
 import User from '../models/user.model.js';
+import Vendor from '../models/vendor.model.js';
 
 /**
  * Subscription Service
@@ -328,7 +329,7 @@ export async function purchaseSubscription(userId, planId, paymentMethod = 'razo
   }
 
   // Find vendor profile
-  const vendor = await mongoose.models.Vendor.findOne({ userId });
+  const vendor = await Vendor.findOne({ userId });
 
   // Create subscription
   const subscriptionData = {
