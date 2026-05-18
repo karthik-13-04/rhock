@@ -128,6 +128,26 @@ const vendorSchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    is_deleted: {
+      type: Boolean,
+      default: false,
+      index: true,
+    },
+    deleted_reason: {
+      type: String,
+      default: null,
+    },
+    deleted_by: {
+      type: String,
+      enum: ['vendor', 'admin'],
+      default: null,
+    },
+    account_status: {
+      type: String,
+      enum: ['ACTIVE', 'SUSPENDED', 'DELETED'],
+      default: 'ACTIVE',
+      index: true,
+    },
 
     // Unique identifier for QR codes and sharing
     slug: {

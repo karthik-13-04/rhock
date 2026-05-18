@@ -5,6 +5,8 @@ import Agent from '../../models/agent.model.js';
 import Otp from '../../models/otp.model.js';
 import Store from '../../models/store.model.js';
 import Review from '../../models/review.model.js';
+import RedemptionRequest from '../../models/redemptionRequest.model.js';
+import VendorAccountLog from '../../models/vendorAccountLog.model.js';
 import { generateOtp } from '../../utils/generateOtp.js';
 import { hashData, compareHash } from '../../utils/hash.js';
 import { generateToken } from '../../utils/jwt.js';
@@ -632,6 +634,10 @@ export class VendorService {
       throw new Error('Vendor profile not found. Please register first.');
     }
 
+    if (vendor.is_deleted === true || vendor.account_status === 'DELETED') {
+      throw new Error('Account deleted. Please create a new account.');
+    }
+
     // 6. Find associated User
     const user = await User.findById(vendor.userId);
     if (!user) {
@@ -734,39 +740,98 @@ export class VendorService {
    * @param {string} vendorId 
    * @param {string} reason 
    */
-  static async deleteVendorAccount(userId, vendorId, reason = '') {
+  static async deleteVendorAccount(userId, vendorId, reason = '', deletedBy = 'vendor', ipAddress = '', deviceInfo = '') {
     await dbConnect();
     const timestamp = Date.now();
 
-    // 1. Update Vendor Status & Suffix Identifiers
+    // 1. Verify Vendor exists
     const vendor = await Vendor.findById(vendorId);
     if (!vendor) throw new Error('Vendor profile not found');
 
-    if (vendor.status !== 'deleted') {
-      if (vendor.email) vendor.email = `${vendor.email}_del_${timestamp}`;
-      if (vendor.mobileNumber) vendor.mobileNumber = `${vendor.mobileNumber}_del_${timestamp}`;
-      if (vendor.slug) vendor.slug = `${vendor.slug}_del_${timestamp}`;
-      
-      vendor.status = 'deleted';
-      vendor.deletedAt = new Date();
-      vendor.deletionReason = reason;
-      await vendor.save();
+    // 2. Pre-deletion Checks (Pending redemption requests block deletion)
+    const pendingRequest = await RedemptionRequest.findOne({ vendor: vendorId, status: 'PENDING' });
+    if (pendingRequest) {
+      throw new Error('You cannot delete account while pending redemption requests exist.');
     }
 
-    // 2. Update User Status & Suffix Identifiers
+    const oldStatus = vendor.account_status || 'ACTIVE';
+
+    // 3. Update Vendor Status & Suffix Identifiers
+    // 3. Update Vendor Status & Suffix Identifiers
+    if (vendor.status !== 'deleted') {
+      const parts = (vendor.email || '').split('@');
+      const suffixedEmail = parts.length === 2 ? `${parts[0]}+del_${timestamp}@${parts[1]}` : `${vendor.email}_del_${timestamp}`;
+      const suffixedMobile = `${vendor.mobileNumber}_del_${timestamp}`;
+      const suffixedSlug = vendor.slug ? `${vendor.slug}_del_${timestamp}` : undefined;
+
+      console.log('DEBUG: vendor updateOne starting');
+      await Vendor.updateOne(
+        { _id: vendorId },
+        {
+          $set: {
+            email: suffixedEmail,
+            mobileNumber: suffixedMobile,
+            slug: suffixedSlug,
+            status: 'deleted',
+            deletedAt: new Date(),
+            deletionReason: reason,
+            is_deleted: true,
+            deleted_at: new Date(),
+            deleted_reason: reason,
+            deleted_by: deletedBy,
+            account_status: 'DELETED'
+          }
+        }
+      );
+      console.log('DEBUG: vendor updateOne finished');
+    }
+
+    // 4. Update User Status & Suffix Identifiers
     const user = await User.findById(userId);
     if (user && user.status !== 'deleted') {
-      if (user.email) user.email = `${user.email}_del_${timestamp}`;
-      if (user.phone) user.phone = `${user.phone}_del_${timestamp}`;
-      if (user.referralCode) user.referralCode = `${user.referralCode}_del_${timestamp}`;
+      const parts = (user.email || '').split('@');
+      const suffixedEmail = parts.length === 2 ? `${parts[0]}+del_${timestamp}@${parts[1]}` : `${user.email}_del_${timestamp}`;
+      const suffixedPhone = `${user.phone}_del_${timestamp}`;
+      const suffixedReferral = user.referralCode ? `${user.referralCode}_del_${timestamp}` : undefined;
+      const suffixedRedeem = user.uniqueRedeemCode ? `${user.uniqueRedeemCode}_del_${timestamp}` : undefined;
 
-      user.status = 'deleted';
-      user.deletedAt = new Date();
-      user.fcmTokens = []; 
-      await user.save();
+      console.log('DEBUG: user updateOne starting');
+      await User.updateOne(
+        { _id: userId },
+        {
+          $set: {
+            email: suffixedEmail,
+            phone: suffixedPhone,
+            referralCode: suffixedReferral,
+            uniqueRedeemCode: suffixedRedeem,
+            status: 'deleted',
+            deletedAt: new Date(),
+            fcmTokens: []
+          }
+        }
+      );
+      console.log('DEBUG: user updateOne finished');
     }
 
-    console.log(`[Vendor Deletion] Account deleted for vendor ${vendorId} (User: ${userId}) - Identifiers suffixed`);
+    // 5. Create Audit Log Record
+    console.log('DEBUG: VendorAccountLog.create starting');
+    await VendorAccountLog.create({
+      vendor_id: vendorId,
+      action_type: 'DELETED',
+      action_by: deletedBy,
+      old_status: oldStatus,
+      new_status: 'DELETED',
+      ipAddress: ipAddress,
+      deviceInfo: deviceInfo
+    });
+    console.log('DEBUG: VendorAccountLog.create finished');
+
+    // 6. simulated Notifications (Email / SMS)
+    console.log(`[Email Simulation] Sent to vendor: "Your vendor account has been deleted."`);
+    console.log(`[SMS Simulation] Sent: Account deletion confirmation.`);
+    console.log(`[Admin Notification] Vendor ${vendor.storeName || vendorId} has deleted their account.`);
+
+    console.log(`[Vendor Deletion] Account deleted for vendor ${vendorId} (User: ${userId}) - Identifiers suffixed & logged`);
     return { success: true };
   }
 

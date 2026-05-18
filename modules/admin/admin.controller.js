@@ -316,4 +316,53 @@ export class AdminController {
       }, { status: 500 });
     }
   }
+
+  /**
+   * Get Deleted Vendors
+   * GET /api/admin/vendors/deleted
+   */
+  static async getDeletedVendors(req) {
+    try {
+      const { searchParams } = new URL(req.url);
+      const filters = {
+        search: searchParams.get('search'),
+        page: searchParams.get('page') || 1,
+        limit: searchParams.get('limit') || 10
+      };
+      
+      const result = await AdminService.listDeletedVendors(filters);
+      return Response.json({ success: true, ...result }, { status: 200 });
+    } catch (error) {
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * Restore Deleted Vendor
+   * POST /api/admin/vendors/restore
+   */
+  static async restoreVendor(req) {
+    try {
+      await dbConnect();
+      const body = await req.json();
+      const { vendorId } = body;
+
+      if (!vendorId) {
+        return Response.json({ success: false, message: 'Vendor ID is required' }, { status: 400 });
+      }
+
+      const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+      const deviceInfo = req.headers.get('user-agent') || 'Unknown Device';
+
+      const restoredVendor = await AdminService.restoreVendorAccount(vendorId, ipAddress, deviceInfo);
+
+      return Response.json({
+        success: true,
+        message: 'Vendor profile restored successfully.',
+        data: restoredVendor
+      }, { status: 200 });
+    } catch (error) {
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
 }

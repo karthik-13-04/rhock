@@ -29,6 +29,23 @@ export async function authenticate(req) {
     // Support both 'id' (from AdminController) and 'userId' (from others)
     const userId = decoded.userId || decoded.id;
 
+    // Database soft-delete governance checks
+    if (decoded.vendorId) {
+      const Vendor = (await import('@/models/vendor.model.js')).default;
+      const vendorDoc = await Vendor.findById(decoded.vendorId).select('is_deleted account_status');
+      if (vendorDoc && (vendorDoc.is_deleted === true || vendorDoc.account_status === 'DELETED')) {
+        return { error: apiError(403, 'Account deleted. Please create a new account.', 'AUTHENTICATION_ERROR') };
+      }
+    }
+
+    if (userId && decoded.role !== 'admin') {
+      const User = (await import('@/models/user.model.js')).default;
+      const userDoc = await User.findById(userId).select('status');
+      if (userDoc && userDoc.status === 'deleted') {
+        return { error: apiError(403, 'Account deleted. Please create a new account.', 'AUTHENTICATION_ERROR') };
+      }
+    }
+
     // Return the user data if valid
     return { 
       user: {

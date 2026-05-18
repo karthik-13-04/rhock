@@ -66,7 +66,9 @@ export default function VendorsPage() {
         page: pagination.page,
         limit: pagination.limit
       };
-      const data = await vendorService.getVendors(filters);
+      const data = activeTab === 'deleted'
+        ? await vendorService.getDeletedVendors(filters)
+        : await vendorService.getVendors(filters);
       
       setVendors(data.vendors || []);
       setPagination({
@@ -211,7 +213,12 @@ export default function VendorsPage() {
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: i * 0.04 }}
-                    className="group hover:bg-zinc-50/50 transition-all duration-300"
+                    className={cn(
+                      "group transition-all duration-300",
+                      (vendor.is_deleted || vendor.status === 'deleted') 
+                        ? "opacity-60 bg-zinc-50/30 hover:bg-zinc-50/50" 
+                        : "hover:bg-zinc-50/50"
+                    )}
                   >
                     <td className="px-10 py-8">
                       <div className="flex items-center gap-6">
@@ -555,6 +562,27 @@ export default function VendorsPage() {
                                   <span>Restrict Node</span>
                                </button>
                             </div>
+                          ) : (selectedVendor.is_deleted || selectedVendor.status === 'deleted') ? (
+                             <button 
+                               disabled={!!processingId}
+                               onClick={async () => {
+                                 setProcessingId(selectedVendor._id);
+                                 try {
+                                   await vendorService.restoreVendor(selectedVendor._id);
+                                   alert('Vendor profile restored successfully.');
+                                   setSelectedVendor(null);
+                                   fetchVendors();
+                                 } catch (error) {
+                                   alert(error || 'Failed to restore vendor account.');
+                                 } finally {
+                                    setProcessingId(null);
+                                 }
+                               }}
+                               className="w-full py-6 bg-green-500 text-white rounded-[32px] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-green-600 transition-all flex items-center justify-center gap-3 group/btn"
+                             >
+                               {processingId ? <Loader2 className="animate-spin" size={20} /> : <ShieldCheck size={20} className="group-hover/btn:scale-110 transition-transform" />}
+                               Restore Vendor Account
+                             </button>
                           ) : (
                              <div className="flex items-center gap-4 p-6 bg-zinc-50 rounded-3xl border border-zinc-100">
                                 <div className={cn("w-3 h-3 rounded-full animate-pulse", 

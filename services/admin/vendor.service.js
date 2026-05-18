@@ -53,5 +53,29 @@ export const vendorService = {
     } catch (error) {
       throw error.response?.data?.message || 'Failed to suspend vendor';
     }
+  },
+
+  /**
+   * Get all deleted vendors with filters
+   */
+  getDeletedVendors: async (filters = {}) => {
+    try {
+      const response = await api.get('/api/admin/vendors/deleted', { params: filters });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Failed to fetch deleted vendors';
+    }
+  },
+
+  /**
+   * Restore a soft-deleted vendor
+   */
+  restoreVendor: async (vendorId) => {
+    try {
+      const response = await api.post('/api/admin/vendors/restore', { vendorId });
+      return response.data;
+    } catch (error) {
+      throw error.response?.data?.message || 'Failed to restore vendor';
+    }
   }
 };

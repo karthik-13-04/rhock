@@ -4,6 +4,9 @@ import Category from '@/models/category.model.js';
 import Ad from '@/models/ad.model.js';
 import Payment from '@/models/payment.model.js';
 import UserSubscription from '@/models/userSubscription.model.js';
+import WalletTransaction from '@/models/walletTransaction.model.js';
+import VendorTransaction from '@/models/vendorTransaction.model.js';
+import VendorAccountLog from '@/models/vendorAccountLog.model.js';
 import { dbConnect } from '@/config/database.js';
 
 export class AdminService {
@@ -353,5 +356,175 @@ export class AdminService {
       page: parseInt(page),
       totalPages: Math.ceil(total / limit)
     };
+  }
+
+  /**
+   * List all soft-deleted vendors
+   * @param {Object} filters { search, page, limit }
+   */
+  static async listDeletedVendors(filters = {}) {
+    await dbConnect();
+    const { search, page = 1, limit = 10 } = filters;
+    
+    const query = { is_deleted: true };
+    
+    if (search) {
+      query.$or = [
+        { storeName: { $regex: search, $options: 'i' } },
+        { fullName: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } }
+      ];
+    }
+    
+    const total = await Vendor.countDocuments(query);
+    const rawVendors = await Vendor.find(query)
+      .populate('userId', 'fullName email phone lastLoginAt createdAt')
+      .populate('categoryId', 'name')
+      .sort({ deletedAt: -1 })
+      .skip((page - 1) * limit)
+      .limit(limit)
+      .lean();
+      
+    const cleanDel = (val) => {
+      if (!val) return val;
+      let cleaned = String(val);
+      if (cleaned.includes('+del_')) {
+        const parts = cleaned.split('+del_');
+        if (parts.length === 2) {
+          const domain = parts[1].split('@')[1];
+          return `${parts[0]}@${domain}`;
+        }
+      }
+      return cleaned.split('_del_')[0];
+    };
+    
+    
+    const vendors = await Promise.all(rawVendors.map(async (v) => {
+      const walletTxCount = await WalletTransaction.countDocuments({ user: v.userId?._id || v.userId });
+      const vendorTxCount = await VendorTransaction.countDocuments({ vendor: v._id });
+      const totalTransactions = walletTxCount + vendorTxCount;
+      
+      const cleanedUser = v.userId ? {
+        ...v.userId,
+        email: cleanDel(v.userId.email),
+        phone: cleanDel(v.userId.phone)
+      } : null;
+      
+      return {
+        ...v,
+        email: cleanDel(v.email),
+        mobileNumber: cleanDel(v.mobileNumber),
+        slug: cleanDel(v.slug),
+        userId: cleanedUser,
+        totalTransactions
+      };
+    }));
+    
+    return {
+      vendors,
+      total,
+      page: parseInt(page),
+      totalPages: Math.ceil(total / limit)
+    };
+  }
+
+  /**
+   * Restore a soft-deleted vendor profile
+   * @param {string} vendorId 
+   */
+  static async restoreVendorAccount(vendorId, ipAddress = '', deviceInfo = '') {
+    await dbConnect();
+    
+    const vendor = await Vendor.findById(vendorId);
+    if (!vendor) throw new Error('Vendor profile not found');
+    if (!vendor.is_deleted) throw new Error('Vendor is not deleted.');
+    
+    const cleanDel = (val) => {
+      if (!val) return val;
+      let cleaned = String(val);
+      if (cleaned.includes('+del_')) {
+        const parts = cleaned.split('+del_');
+        if (parts.length === 2) {
+          const domain = parts[1].split('@')[1];
+          return `${parts[0]}@${domain}`;
+        }
+      }
+      return cleaned.split('_del_')[0];
+    };
+    
+    const rawEmail = cleanDel(vendor.email);
+    const rawMobile = cleanDel(vendor.mobileNumber);
+    const rawSlug = cleanDel(vendor.slug);
+    
+    // 1. Conflict Check: active Vendor
+    const activeVendorConflict = await Vendor.findOne({
+      mobileNumber: rawMobile,
+      is_deleted: false
+    });
+    if (activeVendorConflict) {
+      throw new Error('Cannot restore vendor. The mobile number is already in use by another active vendor account.');
+    }
+    
+    // 2. Conflict Check: active User
+    const activeUserConflict = await User.findOne({
+      phone: rawMobile,
+      status: { $ne: 'deleted' }
+    });
+    if (activeUserConflict) {
+      throw new Error('Cannot restore vendor. The associated user phone is already in use by another active account.');
+    }
+    
+    const oldStatus = vendor.account_status || 'DELETED';
+    
+    // 3. Restore Vendor details
+    await Vendor.updateOne(
+      { _id: vendorId },
+      {
+        $set: {
+          email: rawEmail,
+          mobileNumber: rawMobile,
+          slug: rawSlug || undefined,
+          is_deleted: false,
+          account_status: 'ACTIVE',
+          status: 'active',
+          deletedAt: null,
+          deleted_at: null,
+          deleted_reason: null,
+          deleted_by: null
+        }
+      }
+    );
+    
+    // 4. Restore User details
+    const user = await User.findById(vendor.userId);
+    if (user) {
+      await User.updateOne(
+        { _id: user._id },
+        {
+          $set: {
+            email: cleanDel(user.email),
+            phone: cleanDel(user.phone),
+            referralCode: cleanDel(user.referralCode) || undefined,
+            uniqueRedeemCode: cleanDel(user.uniqueRedeemCode) || undefined,
+            status: 'active',
+            role: 'vendor'
+          }
+        }
+      );
+    }
+    
+    // 5. Create Audit Log
+    await VendorAccountLog.create({
+      vendor_id: vendorId,
+      action_type: 'RESTORED',
+      action_by: 'admin',
+      old_status: oldStatus,
+      new_status: 'ACTIVE',
+      ipAddress,
+      deviceInfo
+    });
+    
+    console.log(`[Admin Restoration] Vendor account ${vendorId} successfully restored!`);
+    return vendor;
   }
 }

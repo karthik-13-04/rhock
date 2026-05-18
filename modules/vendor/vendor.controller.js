@@ -1085,8 +1085,8 @@ export class VendorController {
 
   /**
    * POST /api/vendor/delete-account
-   * Handles vendor account deletion
-   * @body { reason? }
+   * Handles vendor account deletion with secure password confirmation
+   * @body { password, delete_reason }
    */
   static async deleteAccount(req) {
     try {
@@ -1096,17 +1096,45 @@ export class VendorController {
       const { user, error: authError } = await authenticate(req);
       if (authError) return authError;
 
-      // 2. Parse reason (optional)
+      // 2. Parse request body
       let body = {};
       try {
         body = await req.json();
       } catch (e) {
-        // ignore if body is empty
+        return Response.json({ success: false, message: 'Invalid or missing request body.' }, { status: 400 });
       }
-      const { reason } = body;
 
-      // 3. Delete Account (Soft Delete)
-      await VendorService.deleteVendorAccount(user.id, user.vendorId, reason);
+      const { password, delete_reason } = body;
+
+      if (!password) {
+        return Response.json({ success: false, message: 'Password confirmation is required.' }, { status: 400 });
+      }
+
+      // 3. Confirm Password against User record
+      const User = (await import('@/models/user.model.js')).default;
+      const userRecord = await User.findById(user.id).select('+password');
+      if (!userRecord) {
+        return Response.json({ success: false, message: 'User account not found.' }, { status: 404 });
+      }
+
+      const isMatch = await userRecord.comparePassword(password);
+      if (!isMatch) {
+        return Response.json({ success: false, message: 'Incorrect password. Deletion denied.' }, { status: 401 });
+      }
+
+      // 4. Capture telemetry details
+      const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || '127.0.0.1';
+      const deviceInfo = req.headers.get('user-agent') || 'Unknown Device';
+
+      // 5. Execute secure soft delete account flow
+      await VendorService.deleteVendorAccount(
+        user.id, 
+        user.vendorId, 
+        delete_reason || '', 
+        'vendor', 
+        ipAddress, 
+        deviceInfo
+      );
 
       return Response.json({
         success: true,
