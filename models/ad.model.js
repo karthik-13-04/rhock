@@ -128,6 +128,11 @@ const adSchema = new mongoose.Schema(
       ref: 'User',
     },
     reviewedAt: Date,
+    creditRefunded: {
+      type: Boolean,
+      default: false,
+    },
+    creditRefundedAt: Date,
 
     // ==========================================
     // Analytics / Tracking

@@ -2,6 +2,7 @@ import mongoose from 'mongoose';
 import Ad from '../models/ad.model.js';
 import User from '../models/user.model.js';
 import Vendor from '../models/vendor.model.js';
+import UserSubscription from '../models/userSubscription.model.js';
 
 /**
  * Ad Management Service
@@ -21,6 +22,23 @@ const DEFAULT_DURATIONS = {
   featured: 60,
   premium: 90,
 };
+
+async function getActiveAdSubscription(userId) {
+  return UserSubscription.findOne({
+    user: userId,
+    status: { $in: ['active', 'trial'] },
+    endDate: { $gte: new Date() },
+  }).sort({ createdAt: -1 });
+}
+
+function buildCreditSummary({ allocated = 0, remaining = 0 }) {
+  return {
+    allocated,
+    remaining,
+    used: Math.max(0, allocated - remaining),
+    display: `${remaining}/${allocated}`,
+  };
+}
 
 // ==========================================
 // CREATE AD (with credit deduction)
@@ -116,16 +134,19 @@ export async function createAd(data, userId) {
     };
   }
 
+  const activeSubscription = await getActiveAdSubscription(userId);
+  const trackedAvailableCredits = activeSubscription ? activeSubscription.creditsRemaining : user.coinBalance;
+
   // Check if user has enough credits
-  if (user.coinBalance < creditsRequired) {
-    console.warn(`[AdService] Insufficient credits for user ${userId}. Has: ${user.coinBalance}, Needs: ${creditsRequired}`);
+  if (trackedAvailableCredits < creditsRequired || user.coinBalance < creditsRequired) {
+    console.warn(`[AdService] Insufficient credits for user ${userId}. Has: ${trackedAvailableCredits}, Needs: ${creditsRequired}`);
     throw {
       statusCode: 402,
-      message: `Insufficient credits. You need ${creditsRequired} credits but have ${user.coinBalance}`,
+      message: `Insufficient credits. You need ${creditsRequired} credits but have ${trackedAvailableCredits}`,
       errorType: 'INSUFFICIENT_CREDITS',
       details: {
         required: creditsRequired,
-        available: user.coinBalance,
+        available: trackedAvailableCredits,
       },
     };
   }
@@ -145,6 +166,12 @@ export async function createAd(data, userId) {
       message: 'Credits were spent by another request. Please try again.',
       errorType: 'CONFLICT_ERROR',
     };
+  }
+
+  if (activeSubscription) {
+    activeSubscription.creditsRemaining -= creditsRequired;
+    activeSubscription.creditsUsed += creditsRequired;
+    await activeSubscription.save();
   }
 
   // Create the ad
@@ -189,6 +216,10 @@ export async function createAd(data, userId) {
     ad,
     remainingCredits: updatedUser.coinBalance,
     creditsDeducted: creditsRequired,
+    creditSummary: buildCreditSummary({
+      allocated: activeSubscription?.creditsAllocated || updatedUser.coinBalance,
+      remaining: activeSubscription?.creditsRemaining ?? updatedUser.coinBalance,
+    }),
   };
 }
 
@@ -490,6 +521,27 @@ export async function moderateAd(adId, action, adminId, notes = '', sectionId = 
   ad.reviewNotes = notes || ad.reviewNotes;
   ad.reviewedBy = adminId;
   ad.reviewedAt = new Date();
+
+  if (action === 'reject' && !ad.creditRefunded) {
+    const [user, activeSubscription] = await Promise.all([
+      User.findById(ad.user),
+      getActiveAdSubscription(ad.user),
+    ]);
+
+    if (user) {
+      user.coinBalance += ad.creditsUsed || 0;
+      await user.save();
+    }
+
+    if (activeSubscription) {
+      activeSubscription.creditsRemaining += ad.creditsUsed || 0;
+      activeSubscription.creditsUsed = Math.max(0, activeSubscription.creditsUsed - (ad.creditsUsed || 0));
+      await activeSubscription.save();
+    }
+
+    ad.creditRefunded = true;
+    ad.creditRefundedAt = new Date();
+  }
 
   // Assign section if provided (typically during approval)
   if (sectionId) {

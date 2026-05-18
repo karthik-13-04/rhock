@@ -728,7 +728,8 @@ export class VendorController {
           viewCount: result.ad.views || 0,
           canEdit: result.ad.canEdit
         },
-        remainingCredits: result.remainingCredits
+        remainingCredits: result.remainingCredits,
+        creditSummary: result.creditSummary
       }, { status: 201 });
 
     } catch (error) {
@@ -958,14 +959,24 @@ export class VendorController {
       if (authError) return authError;
 
       const dbUser = await User.findById(user.id);
+      const activeSubscription = await getActiveSubscription(user.id);
 
       if (!dbUser) {
         return Response.json({ success: false, message: 'User not found' }, { status: 404 });
       }
 
+      const allocated = activeSubscription?.creditsAllocated || dbUser.coinBalance || 0;
+      const remaining = activeSubscription?.creditsRemaining ?? dbUser.coinBalance ?? 0;
+
       return Response.json({ 
         success: true, 
-        credits: dbUser.coinBalance 
+        credits: remaining,
+        creditSummary: {
+          allocated,
+          remaining,
+          used: Math.max(0, allocated - remaining),
+          display: `${remaining}/${allocated}`,
+        }
       }, { status: 200 });
 
     } catch (error) {

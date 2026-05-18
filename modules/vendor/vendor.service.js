@@ -601,6 +601,11 @@ export class VendorService {
       };
     }
 
+    // Any vendor profile edit must go back through admin review.
+    vendor.status = 'pending_approval';
+    vendor.rejectionReason = '';
+    vendor.registrationStep = Math.max(vendor.registrationStep || 1, 3);
+
     await vendor.save();
     
     // Return populated profile
