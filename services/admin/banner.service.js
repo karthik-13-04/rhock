@@ -32,7 +32,7 @@ export const BannerService = {
    * Update banner
    */
   updateBanner: async (id, data) => {
-    const banner = await Banner.findByIdAndUpdate(id, data, { new: true });
+    const banner = await Banner.findByIdAndUpdate(id, data, { returnDocument: 'after' });
     if (!banner) throw new Error('Banner not found');
     return banner;
   },

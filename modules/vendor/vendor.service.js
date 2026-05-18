@@ -206,7 +206,7 @@ export class VendorService {
     let vendor = await Vendor.findOneAndUpdate(
       { userId },
       { $set: updateData },
-      { new: true, upsert: true, runValidators: true }
+      { returnDocument: 'after', upsert: true, runValidators: true }
     );
 
     return vendor;
@@ -558,8 +558,8 @@ export class VendorService {
   static async sendVendorOtp(mobileNumber) {
     await dbConnect();
 
-    // 1. Check if vendor exists
-    const vendor = await Vendor.findOne({ mobileNumber });
+    // 1. Check if vendor exists (ignore deleted accounts)
+    const vendor = await Vendor.findOne({ mobileNumber, status: { $ne: 'deleted' } });
     if (!vendor) {
       throw new Error('Account not found. Please register.');
     }
@@ -581,7 +581,7 @@ export class VendorService {
         isVerified: false,
         attempts: 0
       },
-      { upsert: true, new: true }
+      { upsert: true, returnDocument: 'after' }
     );
 
     // 4. Log for development
@@ -627,8 +627,8 @@ export class VendorService {
       throw new Error(`Invalid OTP. Attempt ${otpRecord.attempts} of 3.`);
     }
 
-    // 5. Find Vendor
-    const vendor = await Vendor.findOne({ mobileNumber });
+    // 5. Find Vendor (ignore deleted accounts)
+    const vendor = await Vendor.findOne({ mobileNumber, status: { $ne: 'deleted' } });
     if (!vendor) {
       throw new Error('Vendor profile not found. Please register first.');
     }

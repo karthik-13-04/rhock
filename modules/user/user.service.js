@@ -1,4 +1,5 @@
 import User from '../../models/user.model.js';
+import Vendor from '../../models/vendor.model.js';
 import ReferralLog from '../../models/referralLog.model.js';
 import mongoose from 'mongoose';
 
@@ -46,7 +47,7 @@ export class UserService {
     const user = await User.findByIdAndUpdate(
       userId,
       { $set: updateFields },
-      { new: true }
+      { returnDocument: 'after' }
     ).select('firstName lastName email phone profileImage profileCompleted');
 
     if (!user) throw new Error('User account not found');
@@ -70,7 +71,7 @@ export class UserService {
           }
         } 
       },
-      { new: true }
+      { returnDocument: 'after' }
     ).select('location');
 
     if (!user) throw new Error('User account not found');
@@ -184,6 +185,31 @@ export class UserService {
       user.deletedAt = new Date();
       user.fcmTokens = []; 
       await user.save();
+    }
+
+    // Also soft-delete the associated Vendor profile if it exists
+    const vendor = await Vendor.findOne({ userId });
+    if (vendor && vendor.status !== 'deleted') {
+      const parts = (vendor.email || '').split('@');
+      const suffixedEmail = parts.length === 2 ? `${parts[0]}+del_${timestamp}@${parts[1]}` : `${vendor.email}_del_${timestamp}`;
+      const suffixedMobile = `${vendor.mobileNumber}_del_${timestamp}`;
+      const suffixedSlug = vendor.slug ? `${vendor.slug}_del_${timestamp}` : undefined;
+
+      await Vendor.updateOne(
+        { _id: vendor._id },
+        {
+          $set: {
+            email: suffixedEmail,
+            mobileNumber: suffixedMobile,
+            slug: suffixedSlug,
+            status: 'deleted',
+            deletedAt: new Date(),
+            is_deleted: true,
+            account_status: 'DELETED'
+          }
+        }
+      );
+      console.log(`[User Deletion] Soft-deleted associated vendor profile: ${vendor._id}`);
     }
 
     console.log(`[User Deletion] Account deleted for user ${userId} - Identifiers suffixed`);

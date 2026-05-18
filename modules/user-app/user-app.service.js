@@ -131,11 +131,11 @@ export class UserAppService {
   }
 
   static async incrementBannerView(id) {
-    return Banner.findOneAndUpdate({ _id: id, isActive: true }, { $inc: { clicks: 1 } }, { new: true });
+    return Banner.findOneAndUpdate({ _id: id, isActive: true }, { $inc: { clicks: 1 } }, { returnDocument: 'after' });
   }
 
   static async incrementAdView(id) {
-    return Ad.findOneAndUpdate({ _id: id, status: 'approved' }, { $inc: { views: 1 } }, { new: true });
+    return Ad.findOneAndUpdate({ _id: id, status: 'approved' }, { $inc: { views: 1 } }, { returnDocument: 'after' });
   }
 
   static async listCategories() {
@@ -175,11 +175,11 @@ export class UserAppService {
   }
 
   static async saveAd(userId, adId) {
-    return User.findByIdAndUpdate(userId, { $addToSet: { savedAds: adId } }, { new: true }).select('savedAds').lean();
+    return User.findByIdAndUpdate(userId, { $addToSet: { savedAds: adId } }, { returnDocument: 'after' }).select('savedAds').lean();
   }
 
   static async unsaveAd(userId, adId) {
-    return User.findByIdAndUpdate(userId, { $pull: { savedAds: adId } }, { new: true }).select('savedAds').lean();
+    return User.findByIdAndUpdate(userId, { $pull: { savedAds: adId } }, { returnDocument: 'after' }).select('savedAds').lean();
   }
 
   static async getSavedAds(userId) {

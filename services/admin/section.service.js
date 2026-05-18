@@ -62,7 +62,7 @@ export const SectionService = {
       updateData.slug = slugify(updateData.name);
     }
 
-    const section = await Section.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+    const section = await Section.findByIdAndUpdate(id, updateData, { returnDocument: 'after', runValidators: true });
     if (!section) throw new Error('Section not found');
     return section;
   },

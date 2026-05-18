@@ -285,7 +285,7 @@ export async function purchaseSubscription(userId, planId, paymentMethod = 'razo
     const updatedUser = await User.findOneAndUpdate(
       { _id: userId, coinBalance: { $gte: plan.price } },
       { $inc: { coinBalance: -plan.price } },
-      { new: true }
+      { returnDocument: 'after' }
     );
 
     if (!updatedUser) {

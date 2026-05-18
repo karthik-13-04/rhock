@@ -135,7 +135,7 @@ export async function createAd(data, userId) {
   const updatedUser = await User.findOneAndUpdate(
     { _id: userId, coinBalance: { $gte: creditsRequired } },
     { $inc: { coinBalance: -creditsRequired } },
-    { new: true }
+    { returnDocument: 'after' }
   );
 
   if (!updatedUser) {
