@@ -1,10 +1,10 @@
-import Vendor from '../../models/vendor.model.js';
-import User from '../../models/user.model.js';
-import Category from '../../models/category.model.js';
-import Ad from '../../models/ad.model.js';
-import Payment from '../../models/payment.model.js';
-import UserSubscription from '../../models/userSubscription.model.js';
-import { dbConnect } from '../../config/database.js';
+import Vendor from '@/models/vendor.model.js';
+import User from '@/models/user.model.js';
+import Category from '@/models/category.model.js';
+import Ad from '@/models/ad.model.js';
+import Payment from '@/models/payment.model.js';
+import UserSubscription from '@/models/userSubscription.model.js';
+import { dbConnect } from '@/config/database.js';
 
 export class AdminService {
   /**

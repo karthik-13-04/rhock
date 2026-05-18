@@ -1,10 +1,10 @@
 import { AdminService } from './admin.service.js';
-import User from '../../models/user.model.js';
-import { generateToken } from '../../utils/jwt.js';
-import { dbConnect } from '../../config/database.js';
-import { createPlan, getPlans } from '../../services/subscription.service.js';
-import { listAds, moderateAd, assignSectionToAd } from '../../services/ad.service.js';
-import { verifyToken } from '../../utils/jwt.js';
+import User from '@/models/user.model.js';
+import { generateToken } from '@/utils/jwt.js';
+import { dbConnect } from '@/config/database.js';
+import { createPlan, getPlans } from '@/services/subscription.service.js';
+import { listAds, moderateAd, assignSectionToAd } from '@/services/ad.service.js';
+import { verifyToken } from '@/utils/jwt.js';
 
 export class AdminController {
   /**

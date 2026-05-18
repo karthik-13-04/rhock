@@ -459,6 +459,46 @@ export class VendorController {
   }
 
   /**
+   * GET /api/vendor/status
+   * AUTH: Required (Vendor Token)
+   */
+  static async getStatus(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const profile = await VendorService.getVendorProfile(user.vendorId);
+      if (!profile) {
+        return Response.json({ success: false, message: 'Vendor profile not found' }, { status: 404 });
+      }
+
+      let message = 'Your account is active.';
+      if (profile.status === 'pending_approval') {
+        message = 'Your account is under review. Please contact the administrator for any queries.';
+      } else if (profile.status === 'suspended') {
+        message = 'Your account has been suspended. Please contact support.';
+      } else if (profile.status === 'rejected') {
+        message = `Your application was rejected. Reason: ${profile.rejectionReason || 'Please contact admin.'}`;
+      } else if (profile.status === 'draft') {
+        message = 'Please complete your registration to submit for review.';
+      }
+
+      return Response.json({
+        success: true,
+        status: profile.status,
+        rejectionReason: profile.rejectionReason || '',
+        registrationStep: profile.registrationStep,
+        message
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[VendorController.getStatus Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
    * GET /api/vendor/profile
    * AUTH: Required (Vendor Token)
    */
@@ -590,6 +630,17 @@ export class VendorController {
 
       const roleError = authorize(user, ['vendor']);
       if (roleError) return roleError;
+
+      // Check Vendor Status: Only 'active' vendors can post ads
+      const vendorProfile = await VendorService.getVendorProfile(user.vendorId);
+      if (!vendorProfile || vendorProfile.status !== 'active') {
+        return Response.json({
+          success: false,
+          message: vendorProfile?.status === 'pending_approval'
+            ? 'Your account is currently under review. You cannot post ads until it is approved.'
+            : 'Your account is not active. Please contact the administrator.'
+        }, { status: 403 });
+      }
 
       // 2. Parse Form Data
       const formData = await req.formData();
