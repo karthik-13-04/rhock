@@ -40,7 +40,10 @@ export class AuthService {
 
     // 2. Determine Role (from User model if exists)
     const user = await User.findOne({ phone: mobileNumber, status: { $ne: 'deleted' } });
-    let role = user ? user.role : 'user'; // Default to 'user' for app flow
+    if (!user) {
+      throw new Error('Account not found. Please register.');
+    }
+    let role = user.role;
 
     // 3. Generate and Hash OTP
     const plainOtp = "1234"; // Hardcoded to 1234 for now as per user request

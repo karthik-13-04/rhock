@@ -561,8 +561,7 @@ export class VendorService {
     // 1. Check if vendor exists
     const vendor = await Vendor.findOne({ mobileNumber });
     if (!vendor) {
-      // Don't reveal that vendor doesn't exist - redirect to register
-      throw new Error('Vendor not found. Please register using /register');
+      throw new Error('Account not found. Please register.');
     }
 
     // 2. Status Check - Optional: We could block suspended/rejected here, 
