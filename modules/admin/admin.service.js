@@ -41,7 +41,12 @@ export class AdminService {
       .limit(limit)
       .lean();
 
-    // Fetch active credits for each vendor
+    // Fetch active credits for each vendor & clean soft-delete suffixes
+    const cleanDel = (val) => {
+      if (!val) return val;
+      return String(val).split('_del_')[0];
+    };
+
     const vendors = await Promise.all(rawVendors.map(async (v) => {
       const activeSub = await UserSubscription.findOne({
         $or: [
@@ -52,8 +57,18 @@ export class AdminService {
         endDate: { $gte: new Date() }
       }).select('creditsRemaining creditsAllocated').sort({ createdAt: -1 }).lean();
 
+      const cleanedUser = v.userId ? {
+        ...v.userId,
+        email: cleanDel(v.userId.email),
+        phone: cleanDel(v.userId.phone)
+      } : null;
+
       return {
         ...v,
+        email: cleanDel(v.email),
+        mobileNumber: cleanDel(v.mobileNumber),
+        slug: cleanDel(v.slug),
+        userId: cleanedUser,
         creditsRemaining: activeSub?.creditsRemaining || 0,
         creditsAllocated: activeSub?.creditsAllocated || 0
       };
@@ -99,9 +114,28 @@ export class AdminService {
    */
   static async getVendorDetail(vendorId) {
     await dbConnect();
-    return await Vendor.findById(vendorId)
+    const vendor = await Vendor.findById(vendorId)
       .populate('userId', 'fullName email phone')
-      .populate('categoryId', 'name');
+      .populate('categoryId', 'name')
+      .lean();
+
+    if (!vendor) return null;
+
+    const cleanDel = (val) => {
+      if (!val) return val;
+      return String(val).split('_del_')[0];
+    };
+
+    if (vendor.userId) {
+      vendor.userId.email = cleanDel(vendor.userId.email);
+      vendor.userId.phone = cleanDel(vendor.userId.phone);
+    }
+
+    vendor.email = cleanDel(vendor.email);
+    vendor.mobileNumber = cleanDel(vendor.mobileNumber);
+    vendor.slug = cleanDel(vendor.slug);
+
+    return vendor;
   }
 
   /**

@@ -1,0 +1,407 @@
+import { RedemptionsService } from './redemptions.service.js';
+import { authenticate, authorize } from '../../middleware/auth.middleware.js';
+import { dbConnect } from '../../config/database.js';
+import RedemptionRequest from '../../models/redemptionRequest.model.js';
+import WalletTransaction from '../../models/walletTransaction.model.js';
+import VendorTransaction from '../../models/vendorTransaction.model.js';
+import Vendor from '../../models/vendor.model.js';
+import User from '../../models/user.model.js';
+
+/**
+ * Redemptions Controller
+ * Handles user, vendor, and admin coin wallet operations and double-entry transaction ledgers
+ */
+export class RedemptionsController {
+  /**
+   * POST /api/redemption/approve
+   */
+  static async approve(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const body = await req.json();
+      const { requestId } = body;
+      if (!requestId) return Response.json({ success: false, message: 'Request ID is required' }, { status: 400 });
+
+      const result = await RedemptionsService.approveRedemption(user.id, requestId);
+      return Response.json({ success: true, message: 'Redemption approved successfully', request: result }, { status: 200 });
+    } catch (error) {
+      console.error('[RedemptionsController approve Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 400 });
+    }
+  }
+
+  /**
+   * POST /api/redemption/reject
+   */
+  static async reject(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const body = await req.json();
+      const { requestId } = body;
+      if (!requestId) return Response.json({ success: false, message: 'Request ID is required' }, { status: 400 });
+
+      const result = await RedemptionsService.rejectRedemption(user.id, requestId);
+      return Response.json({ success: true, message: 'Redemption request rejected', request: result }, { status: 200 });
+    } catch (error) {
+      console.error('[RedemptionsController reject Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 400 });
+    }
+  }
+
+  /**
+   * GET /api/redemption/pending
+   */
+  static async getPending(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const pending = await RedemptionsService.getPending(user.id);
+      return Response.json({ success: true, pending }, { status: 200 });
+    } catch (error) {
+      console.error('[RedemptionsController getPending Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * GET /api/wallet/balance
+   */
+  static async getWalletBalance(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const stats = await RedemptionsService.getUserWalletStats(user.id);
+      
+      // Fetch unique redemption code to display
+      const fullUser = await User.findById(user.id).select('uniqueRedeemCode');
+
+      return Response.json({
+        success: true,
+        stats,
+        uniqueRedeemCode: fullUser?.uniqueRedeemCode || ''
+      }, { status: 200 });
+    } catch (error) {
+      console.error('[RedemptionsController getWalletBalance Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * GET /api/wallet/transactions
+   */
+  static async getWalletTransactions(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const transactions = await WalletTransaction.find({ user: user.id })
+        .sort({ createdAt: -1 })
+        .limit(50);
+        
+      return Response.json({ success: true, transactions }, { status: 200 });
+    } catch (error) {
+      console.error('[RedemptionsController getWalletTransactions Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  // ==========================================
+  //               VENDOR ENDPOINTS
+  // ==========================================
+
+  /**
+   * POST /api/vendor/redeem/request
+   */
+  static async vendorRequestRedeem(req) {
+    try {
+      await dbConnect();
+      const { user: vendorUser, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const roleError = authorize(vendorUser, ['vendor']);
+      if (roleError) return roleError;
+
+      const body = await req.json();
+      const { userUniqueCode, coinAmount } = body;
+
+      if (!userUniqueCode || !coinAmount || coinAmount <= 0) {
+        return Response.json({ success: false, message: 'Valid redemption code and coin amount are required' }, { status: 400 });
+      }
+
+      const request = await RedemptionsService.requestRedeem(vendorUser.id, userUniqueCode, coinAmount);
+
+      return Response.json({
+        success: true,
+        message: 'Redemption request submitted successfully. Awaiting user approval.',
+        request
+      }, { status: 201 });
+
+    } catch (error) {
+      console.error('[RedemptionsController vendorRequestRedeem Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 400 });
+    }
+  }
+
+  /**
+   * GET /api/vendor/redemption/history
+   */
+  static async vendorGetHistory(req) {
+    try {
+      await dbConnect();
+      const { user: vendorUser, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const roleError = authorize(vendorUser, ['vendor']);
+      if (roleError) return roleError;
+
+      const history = await RedemptionsService.getVendorHistory(vendorUser.id);
+      return Response.json({ success: true, history }, { status: 200 });
+    } catch (error) {
+      console.error('[RedemptionsController vendorGetHistory Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * GET /api/vendor/wallet
+   */
+  static async vendorGetWallet(req) {
+    try {
+      await dbConnect();
+      const { user: vendorUser, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const roleError = authorize(vendorUser, ['vendor']);
+      if (roleError) return roleError;
+
+      const vendor = await Vendor.findOne({ userId: vendorUser.id }).select('coinBalance storeName');
+      if (!vendor) return Response.json({ success: false, message: 'Vendor not found' }, { status: 404 });
+
+      // Calculate total redeemed summary
+      const totalRedeemedResult = await RedemptionRequest.aggregate([
+        { $match: { vendor: vendor._id, status: 'APPROVED' } },
+        { $group: { _id: null, total: { $sum: '$coinAmount' } } }
+      ]);
+
+      return Response.json({
+        success: true,
+        balance: vendor.coinBalance || 0,
+        storeName: vendor.storeName,
+        totalRedeemed: totalRedeemedResult[0]?.total || 0
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[RedemptionsController vendorGetWallet Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  // ==========================================
+  //               ADMIN ENDPOINTS
+  // ==========================================
+
+  /**
+   * GET /api/admin/redemptions
+   */
+  static async getAdminRedemptions(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const roleError = authorize(user, ['admin']);
+      if (roleError) return roleError;
+
+      const { searchParams } = new URL(req.url);
+      const status = searchParams.get('status');
+      const limit = parseInt(searchParams.get('limit') || '20', 10);
+      const page = parseInt(searchParams.get('page') || '1', 10);
+      const isHighValue = searchParams.get('highValue') === 'true';
+
+      const skip = (page - 1) * limit;
+
+      let filterQuery = {};
+      if (status) filterQuery.status = status;
+      if (isHighValue) filterQuery.coinAmount = { $gte: 200 }; // High value filter threshold
+
+      const total = await RedemptionRequest.countDocuments(filterQuery);
+      const redemptions = await RedemptionRequest.find(filterQuery)
+        .populate('user', 'firstName lastName email uniqueRedeemCode')
+        .populate('vendor', 'storeName contactPhone')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const totalPages = Math.ceil(total / limit);
+
+      // Circulation telemetry calculations
+      const totalApprovedResult = await RedemptionRequest.aggregate([
+        { $match: { status: 'APPROVED' } },
+        { $group: { _id: null, total: { $sum: '$coinAmount' } } }
+      ]);
+      const totalPendingResult = await RedemptionRequest.aggregate([
+        { $match: { status: 'PENDING' } },
+        { $group: { _id: null, total: { $sum: '$coinAmount' } } }
+      ]);
+
+      const systemUserCirculation = await User.aggregate([
+        { $group: { _id: null, total: { $sum: '$coinBalance' } } }
+      ]);
+      const systemVendorCirculation = await Vendor.aggregate([
+        { $group: { _id: null, total: { $sum: '$coinBalance' } } }
+      ]);
+
+      return Response.json({
+        success: true,
+        redemptions,
+        stats: {
+          totalRedeemed: totalApprovedResult[0]?.total || 0,
+          pendingRedemption: totalPendingResult[0]?.total || 0,
+          userCirculation: systemUserCirculation[0]?.total || 0,
+          vendorCirculation: systemVendorCirculation[0]?.total || 0
+        },
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages
+        }
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[RedemptionsController getAdminRedemptions Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * GET /api/admin/wallet/logs
+   */
+  static async getAdminWalletLogs(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const roleError = authorize(user, ['admin']);
+      if (roleError) return roleError;
+
+      const { searchParams } = new URL(req.url);
+      const page = parseInt(searchParams.get('page') || '1', 10);
+      const limit = parseInt(searchParams.get('limit') || '20', 10);
+
+      const skip = (page - 1) * limit;
+
+      const total = await WalletTransaction.countDocuments({});
+      const logs = await WalletTransaction.find({})
+        .populate('user', 'firstName lastName email referralCode')
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit);
+
+      const totalPages = Math.ceil(total / limit);
+
+      return Response.json({
+        success: true,
+        logs,
+        pagination: {
+          total,
+          page,
+          limit,
+          totalPages
+        }
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[RedemptionsController getAdminWalletLogs Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+
+  /**
+   * GET /api/admin/fraud-analysis
+   */
+  static async getAdminFraudAnalysis(req) {
+    try {
+      await dbConnect();
+      const { user, error: authError } = await authenticate(req);
+      if (authError) return authError;
+
+      const roleError = authorize(user, ['admin']);
+      if (roleError) return roleError;
+
+      // 1. Scan for accounts repeatedly initiating high value redemptions
+      const highValueAlerts = await RedemptionRequest.find({
+        coinAmount: { $gte: 500 }
+      })
+        .populate('user', 'firstName lastName email uniqueRedeemCode isFlagged')
+        .populate('vendor', 'storeName')
+        .sort({ coinAmount: -1 })
+        .limit(10);
+
+      // 2. Scan for users with excessive concurrent redemptions in past 24 hours
+      const yesterday = new Date(Date.now() - 24 * 60 * 60 * 1000);
+      const duplicateSpikeAlerts = await RedemptionRequest.aggregate([
+        { $match: { createdAt: { $gte: yesterday } } },
+        { $group: { _id: '$user', count: { $sum: 1 }, totalCoins: { $sum: '$coinAmount' } } },
+        { $match: { count: { $gte: 5 } } },
+        { $sort: { count: -1 } }
+      ]);
+
+      const populatedSpikes = [];
+      for (const alert of duplicateSpikeAlerts) {
+        if (!alert._id) continue;
+        const u = await User.findById(alert._id).select('firstName lastName email uniqueRedeemCode isFlagged');
+        populatedSpikes.push({
+          user: u,
+          count: alert.count,
+          totalCoins: alert.totalCoins
+        });
+      }
+
+      // 3. Scan for multiple vendors using the exact same redemption code repeatedly
+      const codeUsageAlerts = await RedemptionRequest.aggregate([
+        { $group: { _id: { user: '$user', code: '$userUniqueCode' }, vendors: { $addToSet: '$vendor' }, count: { $sum: 1 } } },
+        { $project: { user: '$_id.user', code: '$_id.code', vendorCount: { $size: '$vendors' }, count: 1 } },
+        { $match: { vendorCount: { $gte: 2 } } },
+        { $sort: { vendorCount: -1 } }
+      ]);
+
+      const populatedCodeAlerts = [];
+      for (const alert of codeUsageAlerts) {
+        if (!alert.user) continue;
+        const u = await User.findById(alert.user).select('firstName lastName email uniqueRedeemCode isFlagged');
+        populatedCodeAlerts.push({
+          user: u,
+          code: alert.code,
+          vendorCount: alert.vendorCount,
+          totalRequests: alert.count
+        });
+      }
+
+      return Response.json({
+        success: true,
+        alerts: {
+          highValueAlerts,
+          populatedSpikes,
+          populatedCodeAlerts
+        }
+      }, { status: 200 });
+
+    } catch (error) {
+      console.error('[RedemptionsController getAdminFraudAnalysis Error]', error);
+      return Response.json({ success: false, message: error.message }, { status: 500 });
+    }
+  }
+}

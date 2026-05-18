@@ -38,6 +38,7 @@ const navItems = [
   { label: "Notifications", href: "/admin/notifications", icon: Bell },
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
   { label: "Economy", href: "/admin/coins", icon: Wallet },
+  { label: "Referrals", href: "/admin/referrals", icon: Users },
   { label: "Subscriptions", href: "/admin/subscriptions", icon: PieChart },
   { label: "Categories", href: "/admin/categories", icon: Layers },
   { label: "Coupons", href: "/admin/coupons", icon: Tag },

@@ -102,6 +102,12 @@ const userSchema = new mongoose.Schema(
       unique: true,
       sparse: true,
     },
+    uniqueRedeemCode: {
+      type: String,
+      unique: true,
+      sparse: true,
+      index: true,
+    },
     referredBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User',
@@ -189,6 +195,18 @@ userSchema.index({ role: 1, status: 1 });
  * Hash password before saving
  */
 userSchema.pre('save', async function () {
+  // Generate referralCode if not exists
+  if (!this.referralCode) {
+    const rand = Math.random().toString(36).substring(2, 7).toUpperCase();
+    this.referralCode = `USR-${rand}`;
+  }
+
+  // Generate uniqueRedeemCode if not exists
+  if (!this.uniqueRedeemCode) {
+    const num = Math.floor(100000 + Math.random() * 900000);
+    this.uniqueRedeemCode = `RHU-${num}`;
+  }
+
   if (!this.isModified('password')) return;
   
   const salt = await bcrypt.genSalt(10);
